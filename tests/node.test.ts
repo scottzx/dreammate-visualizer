@@ -86,3 +86,33 @@ test('skill catalog first-page failure retains prior successful skills with stal
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }
 });
+
+test('a replacement node never receives previous-node skills on failed or partial skill reads', async () => {
+  let id = 'old', partial = false;
+  const server = createServer((req, res) => {
+    res.setHeader('content-type', 'application/json');
+    if (req.url === '/manifest') res.end(JSON.stringify({ node_id: id, services: [{ id: 'dreammate-skill-manager' }] }));
+    else if (req.url?.startsWith('/skills')) {
+      if (id === 'old') res.end(JSON.stringify({ skills: [{ id: 'old-only', name: 'Old device skill' }] }));
+      else if (partial && !req.url.includes('offset=1')) res.end(JSON.stringify({ skills: [{ id: 'new-only', name: 'New device skill' }], has_more: true, next_offset: 1 }));
+      else { res.writeHead(503); res.end('{}'); }
+    } else res.end(JSON.stringify({ node_id: id }));
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const address = server.address(); assert.ok(address && typeof address !== 'string');
+  const target = { url: `http://127.0.0.1:${address.port}` };
+  try {
+    for (const partialRead of [false, true]) {
+      id = 'old'; partial = partialRead;
+      const adapter = new NodeAdapter(parseConfig({ nodeUrls: [target.url], timeoutMs: 300 }, {}));
+      await adapter.read(target, timestamp);
+      id = 'new';
+      const next = await adapter.read(target, timestamp);
+      assert.equal(next.node.nativeId, 'new');
+      assert.deepEqual(next.services[0].skills.map(skill => skill.id), partialRead ? ['new-only'] : []);
+    }
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

@@ -1,4 +1,5 @@
-import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ServiceView, WorkStatus } from '../read-model/types';
+import { GB } from '../read-model/storage';
+import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ProjectView, ServiceView, WorkStatus } from '../read-model/types';
 
 /** Isolated, explicitly labeled scenario. It never reads or writes a real source. */
 export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
@@ -12,7 +13,7 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     ['mobile', '移动能力站', 'iPhone · iOS', 'ios', 'unknown'],
     ['edge', '边缘设备', 'Linux · ARM64', 'linux', 'unknown'],
   ] as const;
-  const nodes: NodeView[] = definitions.map(([id, name, address, platform, agentStatus], index) => ({ id: `demo:node:${id}`, nativeId: `demo-${id}`, name, address, platform, catalogAvailable: true, networkOnline: index !== 4, online: index !== 4, status: index === 4 ? 'offline' : 'ok', observedAt, serviceIds: [], agentStatus, evidence: evidence(`node-${id}`) }));
+  const nodes: NodeView[] = definitions.map(([id, name, address, platform, agentStatus], index) => ({ id: `demo:node:${id}`, nativeId: `demo-${id}`, name, address, platform, catalogAvailable: true, storage: { totalBytes: [128, 512, 256, 64, 1024][index] * GB, observedAt, source: 'demo', status: 'observed' }, networkOnline: index !== 4, online: index !== 4, status: index === 4 ? 'offline' : 'ok', observedAt, serviceIds: [], agentStatus, evidence: evidence(`node-${id}`) }));
   const serviceDefinitions = [
     ['studio', 'orchestrator', '协作编排', 'agent', ['execution.list', 'execution.events'], ['staged-workflow']],
     ['studio', 'sessions', '会话档案', 'resource_provider', ['sessions.list', 'sessions.read'], []],
@@ -46,5 +47,10 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     event('brief-start', '季度报告工作单开始推进', 'running', 58, 'studio', 'brief', 'brief-1', undefined, 'orchestrator'),
     event('calendar-done', '日程整理完成，业务已接受', 'succeeded', 95, 'mobile', 'calendar', 'calendar-1', undefined, 'calendar'),
   ];
-  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 15000, nodes, services, jobs, events, sources: [{ id: 'demo:scenario', name: '演示 · 协作工厂场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。'] };
+  const projects: ProjectView[] = [
+    { id: 'demo:project:universe', name: '能力宇宙沙盘', nodeIds: ['demo:node:studio'], sessionCount: 18, providers: [{ name: 'Codex', count: 10 }, { name: 'Claude', count: 5 }, { name: 'DSH', count: 3 }], status: 'ok', observedAt, evidence: evidence('project-universe') },
+    { id: 'demo:project:report', name: '经营策略研究', nodeIds: ['demo:node:studio', 'demo:node:compute', 'demo:node:workstation'], sessionCount: 72, providers: [{ name: 'Codex', count: 18 }, { name: 'Claude', count: 36 }, { name: 'DSH', count: 12 }], status: 'partial', observedAt, evidence: evidence('project-report', '示例跨设备项目共用身份；有6个会话未明确归属宿主') },
+    { id: 'demo:project:notes', name: '新想法实验室', nodeIds: ['demo:node:studio'], sessionCount: 3, providers: [{ name: 'Codex', count: 2 }, { name: 'Claude', count: 1 }], status: 'ok', observedAt, evidence: evidence('project-notes') },
+  ];
+  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 15000, nodes, services, jobs, events, projects, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。'] };
 }

@@ -42,7 +42,18 @@ if (action === 'install') {
   await writeFile(plistPath, plist, { mode: 0o600 });
   if (launchctl(['print', target], true).status === 0) launchctl(['bootout', target]);
   launchctl(['enable', target]);
-  launchctl(['bootstrap', domain, plistPath]);
+  // bootout may return before launchd has finished releasing the old job.
+  // A short bounded retry avoids a transient bootstrap I/O error during upgrades.
+  let registered = false;
+  let bootstrapError = '';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const result = launchctl(['bootstrap', domain, plistPath], true);
+    if (result.status === 0) { registered = true; break; }
+    bootstrapError = (result.stderr || result.stdout).trim();
+    if (result.status !== 5) break;
+    await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  if (!registered) throw new Error(bootstrapError || '无法注册 launchd 观察服务');
   console.log(`已安装用户级服务 ${label}\n配置：${plistPath}\n日志：${logs}\n登录后自动运行，进程退出后由 launchd 重启。`);
 } else if (action === 'status') {
   const result = launchctl(['print', target], true);

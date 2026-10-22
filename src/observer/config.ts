@@ -9,6 +9,7 @@ export interface AcpSourceConfig {
 export interface ObserverConfig {
   listenHosts: string[];
   nodeUrls: string[]; timeoutMs: number; refreshIntervalMs: number; staleAfterMs: number;
+  localNodeId?: string;
   maxNodes: number; maxPages: number; acpSources: AcpSourceConfig[]; diagnostics: string[];
 }
 const bounded = (value: unknown, fallback: number, min: number, max: number) => typeof value === 'number' && Number.isInteger(value) ? Math.max(min, Math.min(max, value)) : fallback;
@@ -40,7 +41,7 @@ export function parseConfig(value: unknown, env: NodeJS.ProcessEnv = process.env
   });
   const unique = new Set<string>();
   for (const source of acpSources) { if (unique.has(source.id)) throw new Error(`ACP 配置 id 重复：${source.id}`); unique.add(source.id); }
-  return { listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 10000, 3000, 120000), staleAfterMs: bounded(input.staleAfterMs, 45000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
+  return { localNodeId: string(input.localNodeId).trim() || undefined, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 10000, 3000, 120000), staleAfterMs: bounded(input.staleAfterMs, 45000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
 }
 
 export async function loadConfig(): Promise<ObserverConfig> {

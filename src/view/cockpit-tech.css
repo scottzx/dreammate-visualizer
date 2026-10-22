@@ -1,0 +1,56 @@
+/* Observatory chrome. Decoration never carries network status or execution data. */
+.cockpit-shell{--tech-cyan:#62e8ff;--tech-line:#315b73;background:#020713}
+.cockpit-header{position:relative;background:linear-gradient(100deg,#061827f5,#050c18 55%,#091d2c);border-bottom-color:#38728b;box-shadow:0 2px 22px #0bc8ff12}
+.cockpit-header:after{content:'';position:absolute;left:0;bottom:-1px;width:22%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,#82f3ff,transparent);filter:drop-shadow(0 0 4px #58dfff);animation:telemetry-light 14s linear infinite}
+.cockpit-brand>svg{color:#7cefff;filter:drop-shadow(0 0 8px #0bceff99)}
+.cockpit-brand strong{letter-spacing:1px;text-shadow:0 0 20px #75dfff3d}
+.cockpit-brand small{color:#89bfd5}
+.cockpit-command-bar{background:linear-gradient(90deg,#081b2aeb,#06101def);border-bottom-color:#23465b;box-shadow:inset 0 -1px #8cddff0b}
+.cockpit-search{border-color:#2e5970;box-shadow:inset 0 0 15px #0004}
+.square-button,.scene-tools button{background:linear-gradient(145deg,#102a3a,#071423);border-color:#36617a;border-radius:2px;box-shadow:inset 0 1px #9defff0d}
+.square-button:hover,.scene-tools button:hover{border-color:#63dcef;box-shadow:0 0 14px #00cfff20,inset 0 0 12px #28b7e315}
+.scene-tools button.enabled{color:#9cffff;border-color:#68becf;box-shadow:0 0 12px #42d6ff1d,inset 0 0 10px #43d6ff12}
+.cockpit-world{background:#020713;box-shadow:inset 0 0 100px #0009}
+.cockpit-world:after{content:'';position:absolute;inset:10px;pointer-events:none;z-index:3;background:linear-gradient(#80e8ff80,#80e8ff80) left top/25px 1px no-repeat,linear-gradient(#80e8ff80,#80e8ff80) left top/1px 25px no-repeat,linear-gradient(#80e8ff80,#80e8ff80) right top/25px 1px no-repeat,linear-gradient(#80e8ff80,#80e8ff80) right top/1px 25px no-repeat,linear-gradient(#80e8ff55,#80e8ff55) left bottom/25px 1px no-repeat,linear-gradient(#80e8ff55,#80e8ff55) left bottom/1px 25px no-repeat,linear-gradient(#80e8ff55,#80e8ff55) right bottom/25px 1px no-repeat,linear-gradient(#80e8ff55,#80e8ff55) right bottom/1px 25px no-repeat;opacity:.65}
+.eyebrow{color:#7dd9ee;letter-spacing:2.1px;text-shadow:0 0 12px #22cfff40}
+.world-topline h1{color:#e1f5ff;font-weight:550;text-shadow:0 0 25px #40ceff45,0 2px 8px #000;letter-spacing:3px}
+.world-topline h1:after{content:'';display:block;margin-top:7px;width:112px;height:2px;background:linear-gradient(90deg,#7aeeff 0 24%,#387a94 24% 64%,transparent);box-shadow:0 0 8px #5edbff26}
+.hud-toggle{color:#a2effa;background:linear-gradient(110deg,#0b2d42f0,#071727f4);border-color:#3f8ca3;box-shadow:0 0 20px #00d4ff12,inset 0 1px #7cdfff11;letter-spacing:.4px}
+.hud-toggle.open{background:#134357ed;border-color:#7cecff;box-shadow:0 0 20px #37d5ff21}
+.cockpit-hud{border-color:#3e7894;background:linear-gradient(125deg,#102d40f7,#061323f7 75%);box-shadow:0 10px 50px #0009,inset 0 0 30px #20c3ff08;border-radius:2px}
+.cockpit-hud:before{height:2px;width:58px;background:#8aefff;box-shadow:0 0 10px #38dbff}
+.cockpit-hud:after{height:2px;width:32px;background:#78cfff;box-shadow:0 0 8px #38dbff}
+.hud-header{background:linear-gradient(90deg,#1d526321,#08152600);border-bottom-color:#396077}
+.hud-header h2{color:#dbf5ff;letter-spacing:1.5px}
+.hud-header .eyebrow{font-size:8px;letter-spacing:1.8px}
+.hud-footer{border-top-color:#284c62;background:#03101e70;color:#8bb6ca}
+.metric-card{border-color:#315e78;background:linear-gradient(130deg,#153c5480,#0b213599);border-radius:2px;box-shadow:inset 0 1px #91eaff0a}
+.metric-value{color:#dffaff;font-family:'SFMono-Regular',Consolas,monospace;font-weight:400;text-shadow:0 0 18px #6be2ff40}
+.metric-top{color:#badce9}
+.entity-card{border-color:#2d5971;background:linear-gradient(135deg,#14364b88,#0b2033aa);border-radius:3px}
+.world-directory button{background:linear-gradient(120deg,#103044ec,#071726ef);border-color:#36667e;box-shadow:inset 0 1px #7cdfff12;border-radius:2px}
+.world-directory button:hover{border-color:#76d6e6;background:#1a4e60}
+.world-legend{color:#a1c9da}
+.world-legend i{box-shadow:0 0 8px currentColor}
+.cockpit-footer{background:#040e1b;border-top-color:#2b526b;color:#91b6ca;box-shadow:0 -4px 25px #28c6ff08}
+.stage-pan{border-color:#487f96;box-shadow:0 0 20px #18bdff16;background:#082435ed}
+.stage-pan .pan-track>i{box-shadow:0 0 9px #46e4ff88}
+.mode-switch button.active{background:linear-gradient(100deg,#144252,#1a5460);color:#b5fcff;box-shadow:inset 0 0 12px #7af2ff0d}
+.motion-paused .cockpit-header:after{animation-play-state:paused}
+@keyframes telemetry-light{from{transform:translateX(-110%)}to{transform:translateX(560%)}}
+@media(max-width:760px){.world-topline h1{letter-spacing:1.5px}.world-topline .eyebrow{letter-spacing:1px}.world-topline h1:after{width:85px;margin-top:4px}.cockpit-world:after{inset:6px;opacity:.4}}
+@media(max-height:650px){.world-topline h1:after{margin-top:2px;height:1px}}
+@media(prefers-reduced-motion:reduce){.cockpit-header:after{animation:none}}
+
+.world-legend .world-legend-scale{display:none}
+@media(max-width:760px){.universe-caption{display:none}.world-legend .world-legend-scale{display:flex;flex-basis:100%;justify-content:center;font-size:10px;color:#a4c7d9;line-height:1.5}.stage-pan{bottom:115px}}
+
+/* The universe owns direct touch rotation; portrait window panning uses the separate rail. */
+.stage-viewport[data-horizontal-pan=true] [data-testid=universe-scene] canvas{touch-action:none!important}
+.universe-navigation{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);z-index:16;display:flex;align-items:center;gap:4px;padding:4px 6px;background:#071b2be8;border:1px solid #375f75;box-shadow:0 0 22px #24c5ff0d;border-radius:3px;backdrop-filter:blur(8px);white-space:nowrap}
+.universe-navigation>span{font-size:10px;color:#8fb4c9;padding:0 7px}
+.universe-navigation>button{display:flex;align-items:center;justify-content:center;width:30px;height:28px;color:#addcec;border:1px solid #2e536b;background:#0b2639;border-radius:2px}
+.universe-navigation>button:hover{border-color:#76dced;color:#e3fcff;background:#154457}
+@media(max-width:760px){.universe-navigation{bottom:164px;padding:4px;gap:3px}.universe-navigation>span{font-size:9px;padding:0 4px}.universe-navigation>button{width:27px;height:27px}}
+@media(max-height:650px){.universe-navigation{bottom:52px}.universe-navigation>span{display:none}}
+@media(max-width:760px) and (max-height:650px){.universe-navigation{bottom:164px}}
