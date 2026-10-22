@@ -1,0 +1,10 @@
+{
+  "listenHosts": ["127.0.0.1"],
+  "nodeUrls": ["http://127.0.0.1:36908"],
+  "timeoutMs": 3000,
+  "refreshIntervalMs": 15000,
+  "staleAfterMs": 45000,
+  "maxNodes": 24,
+  "maxPages": 5,
+  "acpSources": []
+}

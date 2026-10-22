@@ -1,0 +1,38 @@
+{
+  "name": "@1agents/dreammate-visualizer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DreamMate 分布式设备与能力网络的三维协作观察应用",
+  "scripts": {
+    "dev": "concurrently -k -n observer,view \"tsx watch src/server/index.ts\" \"vite --host 127.0.0.1\"",
+    "dev:server": "tsx watch src/server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "start": "tsx src/server/index.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "service:install": "node scripts/service.mjs install",
+    "service:status": "node scripts/service.mjs status",
+    "service:uninstall": "node scripts/service.mjs uninstall"
+  },
+  "dependencies": {
+    "@1agents/dreammate-network": "0.5.0",
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "9.8.2",
+    "lucide-react": "^0.468.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "0.186.1",
+    "tsx": "^4.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.183.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "concurrently": "^9.2.0",
+    "typescript": "^5.9.0",
+    "vite": "8.3.5"
+  }
+}
