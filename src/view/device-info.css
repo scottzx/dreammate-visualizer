@@ -1,0 +1,7 @@
+.device-info-details { margin: 12px 0; }
+.device-facts { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 8px; font-size: 11px; line-height: 1.7; }
+.device-facts dt { color: #83a5b9; }.device-facts dd { margin: 0; color: #bdd9e6; overflow-wrap: anywhere; }
+.device-interfaces { margin: 12px 0; font-size: 11px; }.device-interfaces>summary { cursor: pointer; color: #a4cbd7; padding: 6px 0; }
+.device-interface { border: 1px solid #2d4c60; padding: 9px; margin: 7px 0; background: #0b2332; border-radius: 4px; }
+.device-interface code { overflow-wrap: anywhere; font-size: 10px; }.device-interface small { display: block; color: #80a5b9; font-size: 10px; line-height: 1.7; margin-top: 4px; }
+.device-interface>div { padding-top: 7px; color: #acd1df; }.device-info-note { color: #85a9bb; font-size: 11px; line-height: 1.8; }

@@ -1,4 +1,5 @@
 import type { Protocol, ServiceKind } from '@1agents/dreammate-network';
+import type { DeviceInfoView } from './device-info';
 
 export type DataMode = 'live' | 'demo';
 export type CoverageStatus = 'ok' | 'offline' | 'unavailable' | 'forbidden' | 'unsupported' | 'partial' | 'stale' | 'unknown';
@@ -6,7 +7,7 @@ export type WorkStatus = 'queued' | 'running' | 'input_required' | 'succeeded' |
 export interface Evidence { sourceId: string; nativeId?: string; locator?: string; observedAt: string; note?: string }
 export interface SourceView { id: string; name: string; kind: 'node' | 'acp' | 'sessions' | 'artifacts'; status: CoverageStatus; scope: string; observedAt: string | null; diagnostics: string[]; jobsObservedAt?: string | null; version?: string; url?: string }
 export interface NodeStorageView { totalBytes: number; observedAt: string; source: 'node-manifest' | 'observer-host' | 'demo'; status: 'observed' | 'cached' }
-export interface NodeView { id: string; nativeId: string; name: string; address: string; platform: string; online: boolean | null; networkOnline?: boolean | null; catalogAvailable?: boolean; storage?: NodeStorageView; status: CoverageStatus; observedAt: string | null; serviceIds: string[]; agentStatus: 'unknown' | 'running' | 'waiting'; evidence: Evidence[] }
+export interface NodeView { id: string; nativeId: string; name: string; address: string; platform: string; online: boolean | null; networkOnline?: boolean | null; catalogAvailable?: boolean; storage?: NodeStorageView; device?: DeviceInfoView; status: CoverageStatus; observedAt: string | null; serviceIds: string[]; agentStatus: 'unknown' | 'running' | 'waiting'; evidence: Evidence[] }
 export interface MethodView { name: string; description: string; protocol?: Protocol }
 export interface SkillView { id: string; name: string; description: string; revision?: string }
 export interface ServiceView { id: string; nativeId: string; nodeId: string; name: string; description: string; kind: ServiceKind | string; status: 'up' | 'down' | 'unknown'; observedAt: string | null; methods: MethodView[]; skills: SkillView[]; skillsStatus?: CoverageStatus; skillsObservedAt?: string | null; sharing: string; evidence: Evidence[] }

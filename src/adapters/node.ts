@@ -3,6 +3,7 @@ import { GB, GIB, validStorageBytes } from '../read-model/storage';
 import { readObserverStorage } from './storage';
 import type { ObserverConfig } from '../observer/config';
 import { array, failure, object, readJson, string, type JsonObject } from './http';
+import { projectDeviceInfo } from './device-info';
 
 export interface NodeTarget { url: string; nativeId?: string; name?: string; platform?: string; networkOnline?: boolean | null }
 export interface NodeResult { node: NodeView; services: ServiceView[]; source: SourceView }
@@ -73,6 +74,7 @@ export class NodeAdapter {
       if (cached && !conflict) {
         const stale = Date.parse(now) - Date.parse(cached.node.observedAt ?? '') > this.config.staleAfterMs;
         return { node: { ...cached.node, storage: cachedStorage(cached.node.storage),
+          device: cached.node.device && { ...cached.node.device, status: 'cached' },
           online: healthId === cached.node.nativeId ? true : null, status: stale ? 'stale' : 'partial' },
           services: cached.services.map(service => ({ ...service, status: 'unknown', skillsStatus: 'stale' })),
           source: { ...cached.source, status: stale ? 'stale' : error.status,
@@ -131,6 +133,8 @@ export class NodeAdapter {
       skillService.skills = [...skills.values()];
     }
     const metadata = object(manifest.metadata);
+    const identityMatches = (!target.nativeId || target.nativeId === nativeId) && (!healthId || healthId === nativeId);
+    const device = identityMatches ? projectDeviceInfo(metadata.device, nativeId) : undefined;
     // Binding is explicit: remote gateways never inherit this host's disk capacity.
     const reportedStorage = manifestStorage(manifest, now);
     const hostBytes = !reportedStorage && nativeId === this.config.localNodeId
@@ -138,7 +142,8 @@ export class NodeAdapter {
     const storage = reportedStorage
       ?? (validStorageBytes(hostBytes) ? { totalBytes: hostBytes, observedAt: now, source: 'observer-host' as const, status: 'observed' as const } : undefined)
       ?? cachedStorage(this.previous.get(target.url)?.node.nativeId === nativeId ? this.previous.get(target.url)?.node.storage : undefined);
-    const result: NodeResult = { node: { id: nodeId, nativeId, name: string(manifest.name, nativeId), address: target.url, platform: string(manifest.type, 'unknown'), storage, catalogAvailable: true, networkOnline: target.networkOnline ?? null, online: healthResult.status === 'fulfilled' && string(healthResult.value.node_id, nativeId) === nativeId ? true : null, status: diagnostics.length ? 'partial' : 'ok', observedAt: now, serviceIds: services.map(service => service.id), agentStatus: 'unknown', evidence: [{ sourceId, nativeId, observedAt: now, locator: `${target.url}/manifest`, note: '直接读取该 Node 的公开目录；角色忙闲未接入' }] }, services, source: { id: sourceId, name: string(manifest.name, nativeId), kind: 'node', status: diagnostics.length ? 'partial' : 'ok', scope: '该网关当前可见申报服务与技能目录；不含全网调用台账', observedAt: now, url: target.url, version: string(metadata.protocol_version) || undefined, diagnostics } };
+    const result: NodeResult = { node: { id: nodeId, nativeId, name: string(manifest.name, nativeId), address: target.url, platform: string(manifest.type, 'unknown'), storage, device, catalogAvailable: true, networkOnline: target.networkOnline ?? null, online: healthResult.status === 'fulfilled' && string(healthResult.value.node_id, nativeId) === nativeId ? true : null, status: diagnostics.length ? 'partial' : 'ok', observedAt: now, serviceIds: services.map(service => service.id), agentStatus: 'unknown', evidence: [{ sourceId, nativeId, observedAt: now, locator: `${target.url}/manifest`, note: '直接读取该 Node 的公开目录；角色忙闲未接入' }] }, services, source: { id: sourceId, name: string(manifest.name, nativeId), kind: 'node', status: diagnostics.length ? 'partial' : 'ok', scope: '该网关当前可见申报服务与技能目录；不含全网调用台账', observedAt: now, url: target.url, version: string(metadata.protocol_version) || undefined, diagnostics } };
+    if (device) result.node.evidence.push({ sourceId, observedAt: device.observedAt, locator: `${target.url}/manifest#metadata.device`, note: 'Node 自报的系统及网卡信息；不从主机名推测硬件' });
     if (storage) result.node.evidence.push({ sourceId, observedAt: storage.observedAt,
       locator: storage.source === 'observer-host' ? 'observer://host/physical-storage' : `${target.url}/manifest#metadata.hardware`,
       note: storage.source === 'observer-host' ? '按 localNodeId 显式绑定的观察机内置物理磁盘总容量；不含外接盘，未重复计算 APFS 卷' : `Node 上报的设备存储总容量${storage.status === 'cached' ? '；保留上次观测值' : ''}` });

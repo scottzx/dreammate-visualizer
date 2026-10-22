@@ -28,7 +28,7 @@ export function createObserver(config: ObserverConfig) {
       for (const node of latest.nodes) if (!observedIds.has(node.id)) {
         const services = latest.services.filter(service => service.nodeId === node.id).map(service => ({ ...service, status: 'unknown' as const, skillsStatus: 'stale' as const }));
         const source = latest.sources.find(source => node.evidence.some(evidence => evidence.sourceId === source.id));
-        if (source) results.push({ node: { ...node, storage: node.storage && { ...node.storage, status: 'cached' }, status: 'stale', online: null }, services, source: { ...source, status: 'stale', diagnostics: [...source.diagnostics, '本轮发现不完整，保留旧设备快照'] } });
+        if (source) results.push({ node: { ...node, storage: node.storage && { ...node.storage, status: 'cached' }, device: node.device && { ...node.device, status: 'cached' }, status: 'stale', online: null }, services, source: { ...source, status: 'stale', diagnostics: [...source.diagnostics, '本轮发现不完整，保留旧设备快照'] } });
       }
     }
     const snapshot: ObserverSnapshot = { version: 1, mode: 'live', layoutScope: JSON.stringify([...config.nodeUrls].sort()), generatedAt: new Date().toISOString(), refreshIntervalMs: config.refreshIntervalMs,
