@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一伴 · Personal Agent infra — 小蓝同学的天生另一半</title>
+<meta name="description" content="一伴是给个人智能体的能力基础设施：记忆保存，工具就位，技能在线。一台设备接进网络，就成为一个能力节点。">
+<meta property="og:title" content="一伴 · Personal Agent infra">
+<meta property="og:description" content="小蓝同学的天生另一半 —— 记忆保存，工具就位，技能在线。">
+<meta property="og:image" content="assets/yiban-a4.png">
+<meta name="theme-color" content="#05080F">
+<style>
+  :root{
+    --bg:#05080F; --panel:#080D16; --ink:#E9F2FB; --muted:#93A8C2; --dim:#5F7287;
+    --cyan:#6FD8EF; --line:rgba(126,166,206,.16);
+    --font:"PingFang SC","Hiragino Sans GB","Helvetica Neue",Arial,sans-serif;
+    --mono:"Avenir Next","Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--font);
+    -webkit-font-smoothing:antialiased; line-height:1.7;
+    overflow-x:hidden;
+  }
+  a{color:inherit}
+  .wrap{width:min(1180px,92vw);margin:0 auto}
+
+  /* nav */
+  .nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);
+    background:rgba(5,8,15,.72);border-bottom:1px solid rgba(126,166,206,.10)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+  .brand svg{width:26px;height:26px}
+  .brand b{font-size:19px;font-weight:600;letter-spacing:.14em}
+  .brand span{font-family:var(--mono);font-size:10px;letter-spacing:.34em;color:var(--dim)}
+  .nav nav{display:flex;align-items:center;gap:26px;font-size:13.5px;color:var(--muted);letter-spacing:.08em}
+  .nav nav a{text-decoration:none;transition:color .2s}
+  .nav nav a:hover{color:var(--ink)}
+  .nav nav a.cta{border:1px solid rgba(111,216,239,.45);border-radius:999px;padding:7px 16px;color:var(--ink);
+    background:rgba(111,216,239,.07)}
+  .nav nav a.cta:hover{background:rgba(111,216,239,.16)}
+  @media (max-width:720px){ .nav nav a:not(.cta){display:none} }
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;padding:clamp(48px,7vw,96px) 0 clamp(40px,6vw,80px)}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(58% 48% at 74% 30%, rgba(52,104,196,.22), rgba(5,8,15,0) 62%),
+      radial-gradient(36% 34% at 92% 78%, rgba(120,90,220,.12), rgba(5,8,15,0) 66%)}
+  .hero-in{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center}
+  @media (max-width:900px){ .hero-in{grid-template-columns:1fr} }
+  .eyebrow{display:flex;align-items:center;gap:12px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.3em;color:var(--cyan)}
+  .eyebrow i{display:block;width:34px;height:1px;background:var(--cyan);opacity:.65}
+  h1{margin-top:26px;font-size:clamp(38px,6.2vw,72px);line-height:1.16;font-weight:600;letter-spacing:.04em}
+  h1 em{font-style:normal;color:var(--cyan)}
+  .lede{margin-top:26px;max-width:30em;font-size:clamp(14px,1.55vw,17px);color:var(--muted);line-height:2}
+  .lede b{color:var(--ink);font-weight:500}
+  .btn-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+  .btn{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-size:14px;letter-spacing:.06em;
+    padding:13px 24px;border-radius:999px;border:1px solid var(--line);color:var(--ink);transition:.2s}
+  .btn:hover{border-color:rgba(111,216,239,.5);background:rgba(111,216,239,.07)}
+  .btn.primary{background:linear-gradient(120deg,#6FD8EF,#8FB4FF);color:#04101A;border:0;font-weight:600}
+  .btn.primary:hover{filter:brightness(1.06)}
+  .hero-art{position:relative;aspect-ratio:1/1;max-width:560px;justify-self:end;width:100%}
+  .hero-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    -webkit-mask-image:radial-gradient(closest-side,#000 52%,rgba(0,0,0,.8) 74%,transparent 98%),
+      linear-gradient(180deg,#000 62%,rgba(0,0,0,.75) 84%,transparent 100%);
+    -webkit-mask-composite:source-in;
+    mask-image:radial-gradient(closest-side,#000 52%,rgba(0,0,0,.8) 74%,transparent 98%),
+      linear-gradient(180deg,#000 62%,rgba(0,0,0,.75) 84%,transparent 100%);
+    mask-composite:intersect;
+    filter:saturate(1.08) contrast(1.04)}
+  .hero-art::after{content:"能力宇宙 / CAPABILITY UNIVERSE";position:absolute;left:6%;bottom:4%;
+    font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--dim)}
+
+  /* section shell */
+  section{padding:clamp(56px,8vw,110px) 0;border-top:1px solid rgba(126,166,206,.10)}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--cyan)}
+  h2{margin-top:16px;font-size:clamp(26px,3.4vw,40px);font-weight:600;letter-spacing:.03em;line-height:1.3}
+  .sub{margin-top:16px;max-width:44em;color:var(--muted);font-size:clamp(14px,1.4vw,16px)}
+
+  /* pillars */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:48px;background:var(--line);
+    border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  @media (max-width:820px){ .pillars{grid-template-columns:1fr} }
+  .pillar{background:var(--panel);padding:clamp(24px,3vw,38px)}
+  .pillar .no{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--cyan)}
+  .pillar h3{margin-top:18px;font-size:22px;font-weight:600;letter-spacing:.06em}
+  .pillar .en{font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--dim);margin-left:10px}
+  .pillar p{margin-top:14px;color:var(--muted);font-size:14.5px;line-height:1.95}
+
+  /* about */
+  .about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px);align-items:start}
+  @media (max-width:900px){ .about{grid-template-columns:1fr} }
+  .about p{color:var(--muted);font-size:clamp(14px,1.4vw,16px);line-height:2.05}
+  .about p strong{color:var(--ink);font-weight:500}
+  .facts{margin-top:30px;display:grid;gap:0}
+  .fact{display:flex;gap:18px;padding:18px 0;border-top:1px solid var(--line);align-items:baseline}
+  .fact b{flex:0 0 6.4em;font-weight:600;letter-spacing:.06em;font-size:15px}
+  .fact span{color:var(--muted);font-size:14px;line-height:1.85}
+
+  /* poster */
+  .poster{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(28px,5vw,72px);align-items:center}
+  @media (max-width:900px){ .poster{grid-template-columns:1fr} }
+  .poster figure{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#070B13;
+    box-shadow:0 40px 90px -50px rgba(0,0,0,.95)}
+  .poster img{display:block;width:100%;height:auto}
+  .poster ul{list-style:none;margin-top:26px;display:grid;gap:12px;color:var(--muted);font-size:14.5px}
+  .poster li{padding-left:20px;position:relative}
+  .poster li::before{content:"";position:absolute;left:0;top:.72em;width:8px;height:1px;background:var(--cyan)}
+
+  /* cta */
+  .cta-band{text-align:center;border-top:1px solid rgba(126,166,206,.10)}
+  .cta-band h2{font-size:clamp(28px,4vw,48px)}
+  .cta-band .btn-row{justify-content:center}
+  .cta-band .note{margin-top:22px;color:var(--dim);font-size:12.5px;letter-spacing:.08em}
+
+  /* footer */
+  footer{border-top:1px solid rgba(126,166,206,.10);padding:36px 0 44px;color:var(--dim);font-size:12.5px}
+  .foot-in{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;letter-spacing:.08em}
+  .foot-in a{text-decoration:none;color:var(--muted)}
+  .foot-in a:hover{color:var(--ink)}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="8.6" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <circle cx="8.8" cy="23" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <circle cx="23.2" cy="23" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <path d="M16 11.6 L10.6 20.2 M16 11.6 L21.4 20.2 M11.8 23 H20.2" stroke="#6FD8EF" stroke-width=".8" opacity=".5"/>
+        <circle cx="16" cy="8.6" r=".9" fill="#6FD8EF"/><circle cx="8.8" cy="23" r=".9" fill="#6FD8EF"/><circle cx="23.2" cy="23" r=".9" fill="#6FD8EF"/>
+      </svg>
+      <b>一伴</b><span>YIBAN</span>
+    </a>
+    <nav>
+      <a href="#pillars">三个词</a>
+      <a href="#about">它是什么</a>
+      <a href="#poster">宣传页</a>
+      <a href="https://github.com/scottzx/dreammate-visualizer">GitHub</a>
+      <a class="cta" href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">下载</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero" style="border-top:0">
+    <div class="wrap hero-in">
+      <div>
+        <div class="eyebrow"><i></i>PERSONAL AGENT INFRA · 个人智能体基础设施</div>
+        <h1>小蓝同学的<br><em>天生另一半</em></h1>
+        <p class="lede">一台设备接进网络，就成为一个能力节点。<b>换设备、换模型、换工具链，都不用再配置一次。</b></p>
+        <div class="btn-row">
+          <a class="btn primary" href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">下载 A4 宣传页</a>
+          <a class="btn" href="https://github.com/scottzx/dreammate-visualizer">查看源码</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="brochure/assets/universe-focus.jpg" alt="能力宇宙中的设备星球与技能星环">
+      </div>
+    </div>
+  </section>
+
+  <section id="pillars">
+    <div class="wrap">
+      <div class="kicker">记忆保存 / 工具就位 / 技能在线</div>
+      <h2>接进来，就不用再配置</h2>
+      <p class="sub">一个人的智能体散在手机、电脑、服务器和一堆工具里。一伴把它们接进同一张网，让记忆、工具和技能跟着人走，而不是跟着设备走。</p>
+      <div class="pillars">
+        <div class="pillar">
+          <div class="no">01</div>
+          <h3>记忆保存<span class="en">MEMORY</span></h3>
+          <p>上下文、项目与产出留在自己的节点，换设备也不重来。</p>
+        </div>
+        <div class="pillar">
+          <div class="no">02</div>
+          <h3>工具就位<span class="en">TOOLS</span></h3>
+          <p>手机、电脑、服务器的能力接上就能调用，不用逐台配置。</p>
+        </div>
+        <div class="pillar">
+          <div class="no">03</div>
+          <h3>技能在线<span class="en">SKILLS</span></h3>
+          <p>每个技能包都是一个星点，上线即被发现、被调用。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap about">
+      <div>
+        <div class="kicker">ABOUT</div>
+        <h2>它不生产模型，<br>它让模型有地方可去</h2>
+        <p style="margin-top:24px">一伴（Yiban）是给个人智能体的<b>能力基础设施</b>。它不要求你把工作搬进另一个 App，也不绑定某一家模型：它把散在设备、项目和业务系统里的工具、技能与服务，组织成一张<b>可以被任意智能体发现和调用</b>的网络。</p>
+        <p style="margin-top:18px">能力宇宙是这张网的可视化：设备是一颗星球，连线是它们之间真实可达的路径，环上每颗星是一个已上线、可被调用的技能。你看到的都是实况采集，不是示意图。</p>
+      </div>
+      <div class="facts">
+        <div class="fact"><b>设备即节点</b><span>一台手机、一台电脑、一台服务器，接入后就是一个能力节点。</span></div>
+        <div class="fact"><b>能力图谱</b><span>设备、服务、方法、技能四层，全部可查询、可追溯。</span></div>
+        <div class="fact"><b>跨端直连</b><span>同一网络内直连，跨网络走中继，不依赖中心服务器。</span></div>
+        <div class="fact"><b>只读可观测</b><span>谁在用什么、哪一步失败，一屏看清；观察端不参与调度。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="poster">
+    <div class="wrap poster">
+      <figure>
+        <a href="assets/yiban-a4.png"><img src="assets/yiban-a4.png" alt="一伴 A4 宣传页"></a>
+      </figure>
+      <div>
+        <div class="kicker">ONE PAGE</div>
+        <h2 style="font-size:clamp(24px,3vw,34px)">一页纸讲完</h2>
+        <p class="sub">A4 横版，300 dpi。发给人看、贴在墙上、印出来都行。</p>
+        <ul>
+          <li>PNG 3508 × 2480，300 dpi</li>
+          <li>PDF A4 横版，文字未栅格化，送印优先</li>
+          <li>右下角二维码直达本项目的发布页</li>
+        </ul>
+        <div class="btn-row">
+          <a class="btn primary" href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">前往发布页下载</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <div class="kicker">START</div>
+      <h2>一张网，装下你所有的智能体</h2>
+      <div class="btn-row">
+        <a class="btn primary" href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">获取 A4 宣传页</a>
+        <a class="btn" href="https://github.com/scottzx/dreammate-visualizer">GitHub 仓库</a>
+      </div>
+      <p class="note">MIT License · 一伴 · Personal Agent infra</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <div>© 2026 一伴 · Personal Agent infra</div>
+    <div class="foot-links">
+      <a href="https://github.com/scottzx/dreammate-visualizer">GitHub</a>
+      <a href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">Releases</a>
+      <a href="brochure/">宣传页源文件</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
