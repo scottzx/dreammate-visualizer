@@ -63,17 +63,16 @@
   .btn:hover{border-color:rgba(111,216,239,.5);background:rgba(111,216,239,.07)}
   .btn.primary{background:linear-gradient(120deg,#6FD8EF,#8FB4FF);color:#04101A;border:0;font-weight:600}
   .btn.primary:hover{filter:brightness(1.06)}
-  .hero-art{position:relative;aspect-ratio:1/1;max-width:560px;justify-self:end;width:100%}
-  .hero-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-    -webkit-mask-image:radial-gradient(closest-side,#000 52%,rgba(0,0,0,.8) 74%,transparent 98%),
-      linear-gradient(180deg,#000 62%,rgba(0,0,0,.75) 84%,transparent 100%);
+  .hero-art{position:relative;aspect-ratio:500/460;max-width:560px;justify-self:end;width:100%;overflow:hidden;
+    -webkit-mask-image:radial-gradient(closest-side,#000 54%,rgba(0,0,0,.8) 76%,transparent 98%),
+      linear-gradient(180deg,#000 60%,rgba(0,0,0,.7) 84%,transparent 100%);
     -webkit-mask-composite:source-in;
-    mask-image:radial-gradient(closest-side,#000 52%,rgba(0,0,0,.8) 74%,transparent 98%),
-      linear-gradient(180deg,#000 62%,rgba(0,0,0,.75) 84%,transparent 100%);
-    mask-composite:intersect;
+    mask-image:radial-gradient(closest-side,#000 54%,rgba(0,0,0,.8) 76%,transparent 98%),
+      linear-gradient(180deg,#000 60%,rgba(0,0,0,.7) 84%,transparent 100%);
+    mask-composite:intersect}
+  .hero-art img{position:absolute;width:256%;height:auto;left:-80%;top:-22%;
     filter:saturate(1.08) contrast(1.04)}
-  .hero-art::after{content:"能力宇宙 / CAPABILITY UNIVERSE";position:absolute;left:6%;bottom:4%;
-    font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--dim)}
+
 
   /* section shell */
   section{padding:clamp(56px,8vw,110px) 0;border-top:1px solid rgba(126,166,206,.10)}
