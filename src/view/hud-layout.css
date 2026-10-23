@@ -1,0 +1,82 @@
+/*
+ * Observation shell: the workbench keeps one persistent directory rail and opens
+ * the object inspector on demand; presentation mode (`?display=1`) removes the
+ * chrome and turns both panels into drawers over the scene.
+ */
+
+/* ---- workbench rail ------------------------------------------------------ */
+.cockpit-hud { top: 112px; bottom: 52px; }
+.hud-left { width: clamp(288px, 20vw, 336px); }
+.hud-right { width: clamp(324px, 23vw, 380px); }
+.hud-toggle { top: 112px; }
+.hud-toggle-right { top: 112px; }
+
+.hud-left .hud-content { padding-bottom: 14px; }
+.hud-left .list-context { padding: 12px 0 10px; }
+.hud-left .entity-card { padding: 11px; margin-bottom: 8px; }
+.hud-left .entity-card h3 { margin: 8px 0 4px; font-size: 12px; }
+.hud-left .entity-card p { font-size: 10px; line-height: 1.6; }
+.hud-left .entity-meta { margin-top: 7px; font-size: 9px; }
+.hud-left .coverage-note { margin: 12px 0; }
+.directory-tabs button { padding: 10px 2px; font-size: 11px; }
+
+/* Compact overview: six metrics stay on one screen instead of three screens. */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.metric-grid .metric-card { margin: 0; padding: 10px; min-width: 0; }
+.metric-grid .metric-top { font-size: 10px; gap: 4px; }
+.metric-grid .metric-top svg { width: 13px; height: 13px; }
+.metric-grid .metric-value { font-size: 24px; margin: 5px 0; gap: 4px; }
+.metric-grid .metric-value > span { font-size: 9px; }
+.metric-grid .metric-detail { font-size: 9px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.metric-grid .metric-context { display: none; }
+.metric-grid details { display: none; }
+
+/* ---- presentation mode --------------------------------------------------- */
+.topline-actions { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.display-badge { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border: 1px solid #8a6a3e; border-radius: 999px; background: #2a1f12d9; color: #f0c888; font-size: 10px; letter-spacing: .08em; white-space: nowrap; }
+.display-exit { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 1px solid #3a5b6e; border-radius: 999px; background: #0a1c28d9; color: #b9d6e5; font-size: 10px; white-space: nowrap; }
+.display-exit:hover { border-color: #6fcbd2; color: #eafcff; }
+
+.hud-scrim { position: absolute; inset: 0; z-index: 19; background: rgba(2, 7, 13, .58); backdrop-filter: blur(3px); animation: scrim-in .18s ease-out; }
+@keyframes scrim-in { from { opacity: 0 } to { opacity: 1 } }
+
+.cockpit-shell.display-mode { grid-template-rows: minmax(0, 1fr); }
+.display-mode .cockpit-header,
+.display-mode .cockpit-footer { display: none; }
+.display-mode .world-topline { top: 18px; left: 22px; right: 22px; }
+.display-mode .world-topline h1 { font-size: 21px; letter-spacing: 1.4px; }
+.display-mode .cockpit-hud { top: 16px; bottom: 16px; z-index: 60; border-radius: 12px; box-shadow: 0 30px 90px #000c; }
+.display-mode .hud-left { left: 16px; width: clamp(300px, 24vw, 360px); }
+.display-mode .hud-right { right: 16px; width: clamp(340px, 28vw, 420px); }
+.display-mode .world-notice { top: 64px; }
+.display-mode .world-bottomline { bottom: 18px; }
+.display-mode .universe-navigation { bottom: 74px; }
+.display-mode .stage-pan { bottom: 74px; }
+
+/* ---- responsive guards (later than styles.css on purpose) ---------------- */
+@media (max-width: 760px) {
+  .cockpit-hud { top: 188px; bottom: 102px; }
+  .hud-toggle { top: 142px; }
+  .hud-left, .hud-right { width: min(344px, calc(100% - 24px)); }
+  .display-mode .cockpit-hud { top: 12px; bottom: 12px; }
+  .display-mode .hud-left, .display-mode .hud-right { width: calc(100% - 24px); }
+  .display-mode .hud-left { left: 12px; }
+  .display-mode .hud-right { right: 12px; }
+  .display-mode .world-topline { top: 14px; left: 14px; right: 14px; }
+  .metric-grid { grid-template-columns: 1fr; }
+}
+
+/* Denser rail: five devices/services fit one screen, and the scroll edge fades. */
+.hud-left .hud-header { padding: 12px 15px 10px; }
+.hud-left .inspector-tabs button { padding: 8px 2px; }
+.metric-grid { gap: 6px; }
+.metric-grid .metric-card { padding: 9px; }
+.metric-grid .metric-value { font-size: 22px; }
+.hud-left .entity-card { padding: 9px 10px; }
+.hud-left .entity-icon { width: 24px; height: 24px; }
+.hud-left .entity-icon svg { width: 14px; height: 14px; }
+.hud-left .node-card > p { display: none; }
+.hud-left .entity-card h3 { margin: 6px 0 2px; font-size: 11.5px; }
+.hud-left .entity-meta { margin-top: 5px; }
+.hud-left .hud-content,
+.hud-right .hud-content { -webkit-mask-image: linear-gradient(180deg, #000 94%, transparent 100%); mask-image: linear-gradient(180deg, #000 94%, transparent 100%); }

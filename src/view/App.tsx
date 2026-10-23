@@ -3,7 +3,7 @@ import {
   Activity, ArrowRight, ArrowUpRight, Box, Boxes, Check,
   ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clock3, Code2, Database,
   Factory, FileCheck2, Fingerprint, FlaskConical, GitBranch,
-  Link2, LoaderCircle, Maximize2, Network, Pause, Radio, Plus, Minus, Focus, Orbit, Sun,
+  Link2, LoaderCircle, Maximize2, Minimize2, Network, Pause, Presentation, Radio, Plus, Minus, Focus, Orbit, Sun,
   RefreshCw, Rocket, RotateCcw, Search, Server, ShieldCheck, SlidersHorizontal, Terminal,
   TriangleAlert, X,
 } from 'lucide-react';
@@ -24,14 +24,31 @@ import { standaloneDemoSnapshot } from './standalone-snapshot';
 import './styles.css';
 import './cockpit-tech.css';
 import './cockpit-header.css';
+import './hud-layout.css';
 
 const UniverseScene = lazy(() => import('./UniverseScene'));
 const BaseMap = lazy(() => import('./BaseMap'));
 const BuildingInterior = lazy(() => import('./BuildingInterior'));
 const SkillDocument = lazy(() => import('./SkillDocument'));
 
-type Panel = 'jobs' | 'nodes' | 'capabilities' | 'sources' | 'events' | 'voyages';
+type Panel = 'overview' | 'jobs' | 'nodes' | 'capabilities' | 'sources' | 'events' | 'voyages';
 type Filter = 'all' | 'online' | 'attention';
+
+/**
+ * Presentation mode (`?display=1`): the observation surface keeps its chrome out
+ * of the way and panels slide in as drawers. The GitHub Pages landing page uses
+ * this for the embedded demo; the observer itself keeps the workbench layout.
+ */
+const DISPLAY_MODE_REQUESTED = (() => {
+  try { return new URLSearchParams(window.location.search).get('display') === '1'; } catch { return false; }
+})();
+const EMBED_REQUESTED = (() => {
+  try { return new URLSearchParams(window.location.search).get('embed') === '1'; } catch { return false; }
+})();
+const IS_EMBEDDED = (() => {
+  try { return EMBED_REQUESTED || window.self !== window.top; } catch { return true; }
+})();
+
 const coverageText: Record<string, string> = { ok: '已采集', offline: '离线', unavailable: '不可达', forbidden: '无权限', unsupported: '未支持', partial: '部分覆盖', stale: '已过期', unknown: '未知' };
 const workText: Record<WorkStatus, string> = { queued: '排队中', running: '执行中', input_required: '等待确认', succeeded: '已完成', failed: '失败', canceled: '已取消', rejected: '已拒绝', unknown: '未知' };
 const triggerText = { human: '用户', agent: '智能体', automation: '自动化', unknown: '未知' };
@@ -84,8 +101,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
-  const [panel, setPanel] = useState<Panel>('nodes');
-  const [leftOpen, setLeftOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel>('overview');
+  const [displayMode, setDisplayMode] = useState(DISPLAY_MODE_REQUESTED);
+  const [leftOpen, setLeftOpen] = useState(!DISPLAY_MODE_REQUESTED && window.innerWidth >= 1100);
   const [rightOpen, setRightOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
@@ -113,6 +131,21 @@ export default function App() {
 
   useEffect(() => { if (searchOpen) searchInput.current?.focus(); }, [searchOpen]);
   useEffect(() => { if (STANDALONE_DEMO) document.title = '能力宇宙演示 · 一伴'; }, []);
+  // Presentation mode starts closer: the empty HUD space is gone, so the
+  // default overview would leave the network small in a wide frame.
+  const displayFramed = useRef(false);
+  useEffect(() => {
+    if (!displayMode || !snapshot || displayFramed.current) return;
+    displayFramed.current = true;
+    const zoom = window.setTimeout(() => navigateUniverse('zoom-in'), 700);
+    return () => window.clearTimeout(zoom);
+  }, [displayMode, snapshot]);
+  useEffect(() => {
+    if (!displayMode) return;
+    const closeDrawers = (event: KeyboardEvent) => { if (event.key === 'Escape') { setLeftOpen(false); setRightOpen(false); } };
+    window.addEventListener('keydown', closeDrawers);
+    return () => window.removeEventListener('keydown', closeDrawers);
+  }, [displayMode]);
   useEffect(() => {
     const abort = new AbortController();
     const generation = ++requestGeneration.current;
@@ -166,8 +199,19 @@ export default function App() {
   }, [sourceDrawer]);
 
   const switchMode = (next: DataMode) => { if (mode === next) return; latestMode.current = next; requestGeneration.current++; setSnapshot(null); setSelection(null); setSelectedLot(null); setActiveNodeId(null); setInsideBuilding(false); setRightOpen(false); setError(null); setLoading(true); setMode(next); };
-  const openPanel = (next: Panel) => { setPanel(next); setSelection(null); setSelectedLot(null); setInsideBuilding(false); setRightOpen(true); if (window.innerWidth < 900) setLeftOpen(false); };
-  const select = (next: Selection | null) => { setSelection(next); setSelectedLot(null); setInsideBuilding(false); if (next) { setPanel(next.type === 'node' ? 'nodes' : next.type === 'service' || next.type === 'skill' ? 'capabilities' : next.type === 'event' ? 'events' : next.type === 'voyage' ? 'voyages' : 'jobs'); setRightOpen(true); if (window.innerWidth < 900) setLeftOpen(false); } };
+  const openPanel = (next: Panel) => { setPanel(next); setSelection(null); setSelectedLot(null); setInsideBuilding(false); setLeftOpen(true); setRightOpen(false); };
+  const select = (next: Selection | null) => { setSelection(next); setSelectedLot(null); setInsideBuilding(false); if (next) { setPanel(next.type === 'node' ? 'nodes' : next.type === 'service' || next.type === 'skill' ? 'capabilities' : next.type === 'event' ? 'events' : next.type === 'voyage' ? 'voyages' : 'jobs'); setRightOpen(true); if (window.innerWidth < 900 || displayMode) setLeftOpen(false); } else setRightOpen(false); };
+  const setPresentation = (next: boolean) => {
+    setDisplayMode(next);
+    setLeftOpen(!next && window.innerWidth >= 1100);
+    setRightOpen(false);
+    if (next) { setSearchOpen(false); setQuery(''); }
+    try {
+      const url = new URL(window.location.href);
+      if (next) url.searchParams.set('display', '1'); else url.searchParams.delete('display');
+      window.history.replaceState(null, '', url);
+    } catch { /* history is optional in embedded or restricted contexts */ }
+  };
 
   const nodes = snapshot?.nodes ?? [], services = snapshot?.services ?? [], jobs = snapshot?.jobs ?? [], events = snapshot?.events ?? [], sources = snapshot?.sources ?? [], voyages = snapshot?.voyages ?? [];
   const onlineNodes = nodes.filter(node => node.online === true && node.status !== 'stale').length;
@@ -280,8 +324,6 @@ export default function App() {
     return <EmptyState title="该条记录已不在当前快照中" detail="返回列表查看当前可见记录。" />;
   };
 
-  const panelLabels: Record<Panel, string> = { jobs: '业务工作单', nodes: '设备星球', capabilities: '能力目录', sources: '数据来源', events: '观察事件', voyages: '会话航次' };
-  const panelCounts = { jobs: workKnown ? filteredJobs.length : '—', nodes: nodeKnown ? filteredNodes.length : '—', capabilities: catalogKnown ? filteredServices.length : '—', sources: filteredSources.length, events: filteredEvents.length, voyages: voyageSourceKnown ? filteredVoyages.length : '—' };
   const toggleFullscreen = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await sceneRef.current?.requestFullscreen(); setNotice(null); } catch { setNotice('浏览器未允许全屏，可使用窗口最大化继续查看。'); } };
 
   const activeNode = nodes.find(node => node.id === activeNodeId);
@@ -299,7 +341,7 @@ export default function App() {
   }, [snapshot, activeNodeId, activeNode, selectedLot, currentLot]);
   const project = snapshot?.projects?.find(item => item.id === currentLot?.projectId);
   const enterNode = (id: string) => { setActiveNodeId(id); setSelection({ type: 'node', id }); setSelectedLot(null); setInsideBuilding(false); setRightOpen(false); };
-  const selectLot = (lot: BaseLot) => { setSelectedLot(lot); setSelection(null); setRightOpen(true); if (window.innerWidth < 900) setLeftOpen(false); };
+  const selectLot = (lot: BaseLot) => { setSelectedLot(lot); setSelection(null); setRightOpen(true); if (window.innerWidth < 900 || displayMode) setLeftOpen(false); };
   const backToUniverse = () => { setActiveNodeId(null); setSelectedLot(null); setInsideBuilding(false); setSelection(null); setRightOpen(false); };
   const scopeName = insideBuilding && currentLot ? currentLot.name : activeNode?.name ?? '我们的能力宇宙';
   const renderLot = () => currentLot && <>
@@ -308,9 +350,21 @@ export default function App() {
     <Field label="建筑规则">统一占地与高度，积累由材质、灯带和附件表现。</Field>
     {currentLot.placeholder ? <EmptyState title="项目、会话与产物待接入" detail="这是接口预留地块，不代表发现了一个真实项目。真实数量、参与占比和活动状态均未核验。" /> : currentLot.type === 'project' ? <><Field label="可见会话">{project?.sessionCount ?? '未核验'}</Field>{project?.storage && <ProjectStorageDetails rows={project.storage.filter(row => row.nodeId === currentLot.nodeId)} />}<Field label="项目覆盖">{coverageText[project?.status ?? 'unknown']}</Field><Field label="观测时间">{fullDate(project?.observedAt)}</Field><h4 className="section-label">会话宿主构成</h4>{project && projectProviderShares(project).length ? <><div className="provider-shares">{projectProviderShares(project).map((share, index) => <div className="provider-share" key={share.name}><div><i style={{ background: share.name === '未归属' ? '#8293a4' : ['#5ce0df', '#ffb65d', '#a79bff', '#82d497'][index % 4] }} /><strong>{share.name}</strong><span>{share.count} · {share.percent.toFixed(0)}%</span></div><div className="share-track"><i style={{ width: `${share.percent}%`, background: share.name === '未归属' ? '#8293a4' : ['#5ce0df', '#ffb65d', '#a79bff', '#82d497'][index % 4] }} /></div></div>)}</div><p className="inline-coverage-note">按可见会话宿主归属统计；不代表工作质量、耗时或当前在线人数。人物仅为比例示意。</p></> : <p className="inline-coverage-note">尚无可核验的会话宿主归属，不生成参与占比。</p>}{project && <EvidenceList evidence={project.evidence} />}</> : currentLot.type === 'academy' ? <><Field label="可见技能声明">{currentLot.count ?? '未核验'}</Field><p className="inline-coverage-note">同一技能在不同服务中可能重复部署；可见声明不是去重后的独立技能总量。</p>{services.filter(service => service.nodeId === currentLot.nodeId && (service.skills.length || service.skillsStatus !== 'ok')).map(service => <div className="method-item" key={service.id}><strong>{service.name}</strong><p>{serviceSkillLabel(service)} · {coverageText[service.skillsStatus ?? 'unknown']}</p><div className="skill-chips">{service.skills.slice(0, 18).map(skill => <span key={skill.id}>{skill.name}</span>)}{service.skills.length > 18 && <span>+{service.skills.length - 18}</span>}</div></div>)}</> : currentLot.type === 'agents' ? <><Field label="已申报智能体运行时">{currentLot.count ?? '未核验'}</Field><p className="inline-coverage-note">目录中的运行时声明不等于常驻角色数量，也不证明角色正在执行。</p>{services.filter(service => service.nodeId === currentLot.nodeId && ['agent_runtime', 'agent'].includes(service.kind)).map(renderService)}</> : <>{services.filter(service => service.id === currentLot.serviceId).map(service => <div key={service.id}><Field label="健康观测">{serviceBadge(service).label}</Field><Field label="可见方法">{service.methods.length}</Field><Field label="可见 Skill">{serviceSkillLabel(service)}</Field><p className="inline-coverage-note">{service.description || '来源未提供描述'}</p><button className="button" onClick={() => select({ type: 'service', id: service.id })}>查看完整目录与证据<ArrowRight size={14} /></button><EvidenceList evidence={service.evidence} /></div>)}</>}
   </>;
-  const renderPanel = () => selectedLot ? renderLot() : selection ? <>{selectedNode && <><DeviceInfoDetails node={selectedNode} /><NodeContentsDetails snapshot={snapshot!} nodeId={selectedNode.id} /><button className="button primary-action" onClick={() => enterNode(selectedNode.id)}><ArrowRight size={15} />进入星球基地</button></>}{renderDetails()}</> : panel === 'nodes' ? <><p className="list-context">等距设备环 · 星球体积 ∝ 设备存储 · 未采集存储统一默认 128G</p>{filteredNodes.map(renderNode)}{!filteredNodes.length && <EmptyState title="没有匹配的设备" detail="搜索与状态筛选只改变当前可见范围。" />}</> : panel === 'capabilities' ? <><p className="list-context">{catalogContext} · 按部署实例浏览</p>{filteredServices.map(renderService)}{!filteredServices.length && <EmptyState title={catalogKnown ? '没有匹配的可见服务' : '能力目录尚未核验'} detail="来源不可用不能认定没有能力。" />}</> : panel === 'jobs' ? <><p className="list-context">{workContext}</p>{filteredJobs.map(renderJob)}{!filteredJobs.length && <EmptyState title={workKnown ? '当前可见列表中没有工作单' : '工作单列表尚未核验'} detail="仅成功读取明确授权的工作单列表后统计；事件空页不证明没有工作。" />}</> : panel === 'voyages' ? <><p className="list-context">{voyageContext} · 每个刷新周期重演一次起航</p>{filteredVoyages.map(renderVoyage)}{!filteredVoyages.length && <EmptyState icon={<Rocket size={26} />} title={voyageSourceKnown ? '当前可见范围内没有航次' : '本地会话来源未接入'} detail="在配置中启用 sessions 来源，或切换演示模式查看航迹；未接入不代表本机没有会话。" />}</> : panel === 'events' ? <><p className="list-context">来源可见历史 · 非全网调用台账</p>{filteredEvents.slice(0, 50).map(event => <button className="entity-card event-card" key={event.id} onClick={() => select({ type: 'event', id: event.id })}><div className="item-topline"><time>{time(event.occurredAt, true)}</time><Badge tone={jobTone(event.status)}>{workText[event.status]}</Badge></div><h3>{event.title}<ChevronRight size={14} /></h3><p className="mono break">{event.type}</p></button>)}{!filteredEvents.length && <EmptyState icon={<Activity size={26} />} title="尚无匹配的观察事件" detail="星环卫星表示可见服务，真实工作活动以事件证据为准。" />}</> : <SourceCards sources={filteredSources} />;
+  const panelLabels: Record<Panel, string> = { overview: '能力概览', jobs: '业务工作单', nodes: '设备星球', capabilities: '能力目录', sources: '数据来源', events: '观察事件', voyages: '会话航次' };
+  const directoryTabs = [['overview', '概览'], ['nodes', '设备'], ['capabilities', '能力'], ['jobs', '工作'], ['voyages', '航次'], ['events', '事件']] as const;
+  const panelCounts: Partial<Record<Panel, number | string>> = { nodes: nodeKnown ? filteredNodes.length : '—', capabilities: catalogKnown ? filteredServices.length : '—', jobs: workKnown ? filteredJobs.length : '—', voyages: voyageSourceKnown ? filteredVoyages.length : '—', events: filteredEvents.length };
 
-  return <div className={`cockpit-shell ${mode === 'demo' ? 'demo-mode' : ''} ${paused ? 'motion-paused' : ''}`}>
+  const renderOverview = () => <>
+    <p className="list-context">完整快照口径 · 不随当前搜索筛选改变</p>
+    <div className="metric-grid">{metrics.map(metric => <article className={`metric-card metric-${metric.tone}`} key={metric.label} title={metric.note}><div className="metric-top"><span>{metric.label}</span><metric.icon size={15} /></div><div className="metric-value">{metric.value}<span>{metric.unit}</span></div><p className="metric-detail">{metric.detail}</p>{metric.context && <p className="metric-context">{metric.context}</p>}<details><summary>统计口径</summary><p>{metric.note}</p></details></article>)}</div>
+    <button className="button" onClick={() => setSourceDrawer(true)}>来源与覆盖边界<ArrowRight size={14} /></button>
+  </>;
+
+  const renderDirectory = () => panel === 'nodes' ? <><p className="list-context">等距设备环 · 星球体积 ∝ 设备存储 · 未采集存储统一默认 128G</p>{filteredNodes.map(renderNode)}{!filteredNodes.length && <EmptyState title="没有匹配的设备" detail="搜索与状态筛选只改变当前可见范围。" />}</> : panel === 'capabilities' ? <><p className="list-context">{catalogContext} · 按部署实例浏览</p>{filteredServices.map(renderService)}{!filteredServices.length && <EmptyState title={catalogKnown ? '没有匹配的可见服务' : '能力目录尚未核验'} detail="来源不可用不能认定没有能力。" />}</> : panel === 'jobs' ? <><p className="list-context">{workContext}</p>{filteredJobs.map(renderJob)}{!filteredJobs.length && <EmptyState title={workKnown ? '当前可见列表中没有工作单' : '工作单列表尚未核验'} detail="仅成功读取明确授权的工作单列表后统计；事件空页不证明没有工作。" />}</> : panel === 'voyages' ? <><p className="list-context">{voyageContext} · 每个刷新周期重演一次起航</p>{filteredVoyages.map(renderVoyage)}{!filteredVoyages.length && <EmptyState icon={<Rocket size={26} />} title={voyageSourceKnown ? '当前可见范围内没有航次' : '本地会话来源未接入'} detail="在配置中启用 sessions 来源，或切换演示模式查看航迹；未接入不代表本机没有会话。" />}</> : panel === 'events' ? <><p className="list-context">来源可见历史 · 非全网调用台账</p>{filteredEvents.slice(0, 50).map(event => <button className="entity-card event-card" key={event.id} onClick={() => select({ type: 'event', id: event.id })}><div className="item-topline"><time>{time(event.occurredAt, true)}</time><Badge tone={jobTone(event.status)}>{workText[event.status]}</Badge></div><h3>{event.title}<ChevronRight size={14} /></h3><p className="mono break">{event.type}</p></button>)}{!filteredEvents.length && <EmptyState icon={<Activity size={26} />} title="尚无匹配的观察事件" detail="星环卫星表示可见服务，真实工作活动以事件证据为准。" />}</> : panel === 'sources' ? <SourceCards sources={filteredSources} /> : renderOverview();
+
+  const renderInspector = () => selectedLot ? renderLot() : selection ? <>{selectedNode && <><DeviceInfoDetails node={selectedNode} /><NodeContentsDetails snapshot={snapshot!} nodeId={selectedNode.id} /><button className="button primary-action" onClick={() => enterNode(selectedNode.id)}><ArrowRight size={15} />进入星球基地</button></>}{renderDetails()}</> : <EmptyState icon={<Boxes size={26} />} title="尚未选择对象" detail="在左侧目录中选择设备、服务、工作单、航次或事件，或直接在星空中点击星球。" />;
+
+  return <div className={`cockpit-shell ${mode === 'demo' ? 'demo-mode' : ''} ${paused ? 'motion-paused' : ''} ${displayMode ? 'display-mode' : 'workbench-mode'}`}>
     <header className="cockpit-header">
       <div className="cockpit-heading">
         <button className="cockpit-brand" onClick={backToUniverse} aria-label="返回能力宇宙" title="DreamMate · 返回能力宇宙"><Network size={20} /><strong>DreamMate</strong></button>
@@ -324,6 +378,7 @@ export default function App() {
       </div>
       <button ref={searchToggle} className={`compact-search-toggle square-button ${searchOpen || query || filter !== 'all' ? 'active' : ''}`} onClick={() => setSearchOpen(value => !value)} aria-label={searchOpen ? '收起搜索与筛选' : '展开搜索与筛选'} aria-expanded={searchOpen} aria-controls="cockpit-search"><Search size={16} /></button>
       <div className="cockpit-command-actions">
+        <button className="square-button display-entry" onClick={() => setPresentation(true)} title="进入展示模式" aria-label="进入展示模式"><Presentation size={16} /></button>
         <a className="model-gallery-link square-button" href={assetUrl('?view=models')} title="打开三维模型图鉴" aria-label="打开三维模型图鉴"><Box size={16} /></a>
         {STANDALONE_DEMO ? <span className="mode-switch standalone-demo-badge" aria-label="数据模式"><FlaskConical size={13} />演示</span> : <div className="mode-switch" aria-label="数据模式"><button className={mode === 'live' ? 'active' : ''} onClick={() => switchMode('live')}><Radio size={13} />实况</button><button className={mode === 'demo' ? 'active demo-active' : ''} onClick={() => switchMode('demo')}><FlaskConical size={13} />演示</button></div>}
         <button className="square-button" disabled={loading} onClick={refreshNow} aria-label="手动刷新来源" title="手动刷新来源"><RefreshCw size={16} className={loading ? 'spinning' : ''} /></button>
@@ -337,7 +392,7 @@ export default function App() {
     </header>
     <main className="cockpit-world" ref={sceneRef}>
       <StageViewport scope={`${mode}:${activeNodeId ?? 'universe'}:${insideBuilding ? currentLot?.id : 'base'}`}><Suspense fallback={<div className="scene-loading"><LoaderCircle size={25} className="spinning" /><span>正在载入三维空间…</span></div>}>{snapshot && nodes.length ? insideBuilding && currentLot ? <BuildingInterior lot={currentLot} project={project} /> : activeNode ? <BaseMap lots={baseLots} selectedId={currentLot?.id} onSelect={selectLot} /> : <UniverseScene snapshot={snapshot} selection={selection} onSelect={select} visibleNodeIds={sceneNodeIds} showConnections={showConnections} showVoyages={showVoyages} visibleVoyageIds={visibleVoyageIds} resetKey={resetKey} onEnterNode={enterNode} paused={paused} navAction={navigationAction} /> : <div className="scene-empty"><EmptyState icon={loading ? <LoaderCircle className="spinning" size={32} /> : <Network size={32} />} title={loading ? '正在读取能力世界' : '尚无可见设备'} detail={error ?? '接入明确的 Node 来源，或切换演示预览空间。'} />{!loading && <button className="button" onClick={() => switchMode('demo')}>打开演示宇宙</button>}</div>}</Suspense></StageViewport>
-      <div className="world-topline"><div><span className="eyebrow">{insideBuilding ? 'BUILDING OBSERVATORY' : activeNode ? 'PLANETARY BASE' : 'DISTRIBUTED INTELLIGENCE NETWORK'}</span><h1>{scopeName}</h1></div><div className="scene-tools"><button onClick={toggleFullscreen} aria-label={fullscreen ? '退出全屏沙盘' : '全屏沙盘'} title="切换全屏沙盘"><Maximize2 size={16} /></button><button className={showConnections ? 'enabled' : ''} onClick={() => setShowConnections(value => !value)} aria-label="切换设备互联与协作链路" title="本机连接路径、对等互联示意与有证据的协作链路"><GitBranch size={16} /></button><button className={showVoyages ? 'enabled' : ''} onClick={() => setShowVoyages(value => !value)} aria-label="切换会话航次与小飞船" title="会话航次：项目起点 → MCP 停靠点 → 最后停靠点；每个刷新周期重演起航"><Rocket size={16} /></button><button className={paused ? 'enabled' : ''} onClick={() => setPaused(value => !value)} aria-label={paused ? '恢复示意巡航' : '暂停示意巡航'} title="暂停 / 恢复示意巡航"><Pause size={16} /></button><button onClick={() => setResetKey(value => value + 1)} aria-label="复位宇宙视角" title="复位视角"><RotateCcw size={16} /></button></div></div>
+      <div className="world-topline"><div><span className="eyebrow">{insideBuilding ? 'BUILDING OBSERVATORY' : activeNode ? 'PLANETARY BASE' : 'DISTRIBUTED INTELLIGENCE NETWORK'}</span><h1>{scopeName}</h1></div><div className="topline-actions">{displayMode && mode === 'demo' && <span className="display-badge"><FlaskConical size={12} />演示场景</span>}{displayMode && !IS_EMBEDDED && <button className="display-exit" onClick={() => setPresentation(false)} title="退出展示模式"><Minimize2 size={13} />退出展示</button>}<div className="scene-tools"><button onClick={toggleFullscreen} aria-label={fullscreen ? '退出全屏沙盘' : '全屏沙盘'} title="切换全屏沙盘"><Maximize2 size={16} /></button><button className={showConnections ? 'enabled' : ''} onClick={() => setShowConnections(value => !value)} aria-label="切换设备互联与协作链路" title="本机连接路径、对等互联示意与有证据的协作链路"><GitBranch size={16} /></button><button className={showVoyages ? 'enabled' : ''} onClick={() => setShowVoyages(value => !value)} aria-label="切换会话航次与小飞船" title="会话航次：项目起点 → MCP 停靠点 → 最后停靠点；每个刷新周期重演起航"><Rocket size={16} /></button><button className={paused ? 'enabled' : ''} onClick={() => setPaused(value => !value)} aria-label={paused ? '恢复示意巡航' : '暂停示意巡航'} title="暂停 / 恢复示意巡航"><Pause size={16} /></button><button onClick={() => setResetKey(value => value + 1)} aria-label="复位宇宙视角" title="复位视角"><RotateCcw size={16} /></button></div></div></div>
       {!activeNode && snapshot && nodes.length > 0 && <div className="universe-navigation" role="toolbar" aria-label="星空导航">
         <span>拖动旋转 · 滚轮 / 双指缩放</span>
         <button onClick={() => navigateUniverse('zoom-out')} aria-label="拉远星空" title="拉远：星系可缩至光点"><Minus size={16} /></button>
@@ -346,11 +401,12 @@ export default function App() {
         <button onClick={() => navigateUniverse('focus-service-system')} aria-label="服务太阳系" title="跟随当前服务域名对应的小太阳系"><Sun size={16} /></button>
         <button onClick={() => navigateUniverse('overview')} aria-label="星系总览" title="返回所有小星系与 DERP 总中心"><Orbit size={16} /></button>
       </div>}
-      {(mode === 'demo' || error || notice) && <div className={`world-notice ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'}>{mode === 'demo' && <span><FlaskConical size={13} /><strong>演示世界</strong> · 设备、项目、会话和事件均为示例</span>}{error && <span><TriangleAlert size={13} />读取失败：{error}{snapshot ? ' · 保留旧快照' : ''}</span>}{notice && <span>{notice}<button onClick={() => setNotice(null)} aria-label="关闭提示"><X size={13} /></button></span>}</div>}
-      <button className={`hud-toggle hud-toggle-left ${leftOpen ? 'open' : ''}`} onClick={() => { setLeftOpen(value => !value); if (window.innerWidth < 900) setRightOpen(false); }} aria-label={leftOpen ? '收起网络指标 HUD' : '展开网络指标 HUD'} aria-expanded={leftOpen}><Activity size={18} /><span>网络指标</span>{leftOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>
-      <button className={`hud-toggle hud-toggle-right ${rightOpen ? 'open' : ''}`} onClick={() => { setRightOpen(value => !value); if (window.innerWidth < 900) setLeftOpen(false); }} aria-label={rightOpen ? '收起对象详情 HUD' : '展开对象详情 HUD'} aria-expanded={rightOpen}>{rightOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}<span>对象目录</span><Boxes size={18} /></button>
-      {leftOpen && <aside className="cockpit-hud hud-left" aria-label="网络指标 HUD"><div className="hud-header"><div><span className="eyebrow">NETWORK TELEMETRY</span><h2>可见网络指标</h2></div><button className="icon-button" onClick={() => setLeftOpen(false)} aria-label="关闭网络指标"><X size={18} /></button></div><div className="hud-content"><p className="list-context">完整快照口径 · 不随当前搜索筛选改变</p>{metrics.map(metric => <article className={`metric-card metric-${metric.tone}`} key={metric.label} title={metric.note}><div className="metric-top"><span>{metric.label}</span><metric.icon size={16} /></div><div className="metric-value">{metric.value}<span>{metric.unit}</span></div><p className="metric-detail">{metric.detail}</p>{metric.context && <p className="metric-context">{metric.context}</p>}<details><summary>统计口径</summary><p>{metric.note}</p></details></article>)}<div className="coverage-note"><CircleHelp size={15} /><span>球体和舰群反映承载规模。星舰是抽样示意，不代表精确数量或实际调用。</span></div><button className="button" onClick={() => setSourceDrawer(true)}>来源与覆盖边界<ArrowRight size={14} /></button></div></aside>}
-      {rightOpen && <aside className="cockpit-hud hud-right" aria-label="对象详情 HUD"><div className="hud-header"><div><span className="eyebrow">OBJECT OBSERVATORY</span><h2>{selection?.type === 'skill' ? 'Skill 文档' : selection || selectedLot ? '对象与证据' : panelLabels[panel]}</h2></div><button className="icon-button" onClick={() => setRightOpen(false)} aria-label="关闭对象详情"><X size={18} /></button></div><div className="inspector-tabs">{([['nodes', '设备'], ['capabilities', '能力'], ['jobs', '工作'], ['voyages', '航次'], ['events', '事件']] as const).map(([value, label]) => <button key={value} className={!selection && !selectedLot && panel === value ? 'active' : ''} onClick={() => openPanel(value)}>{label}</button>)}</div>{(selection || selectedLot) && <button className="detail-back" onClick={() => { setSelection(null); setSelectedLot(null); setInsideBuilding(false); }}><ChevronLeft size={14} />返回{panelLabels[panel]}</button>}<div className="hud-content">{renderPanel()}</div><div className="hud-footer"><ShieldCheck size={12} />只观察，不调度或控制执行</div></aside>}
+      {((mode === 'demo' && !displayMode) || error || notice) && <div className={`world-notice ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'}>{mode === 'demo' && !displayMode && <span><FlaskConical size={13} /><strong>演示世界</strong> · 设备、项目、会话和事件均为示例</span>}{error && <span><TriangleAlert size={13} />读取失败：{error}{snapshot ? ' · 保留旧快照' : ''}</span>}{notice && <span>{notice}<button onClick={() => setNotice(null)} aria-label="关闭提示"><X size={13} /></button></span>}</div>}
+      {!displayMode && !leftOpen && <button className={`hud-toggle hud-toggle-left ${leftOpen ? 'open' : ''}`} onClick={() => setLeftOpen(value => !value)} aria-label={leftOpen ? '收起观察台' : '展开观察台'} aria-expanded={leftOpen}><Activity size={18} /><span>观察台</span>{leftOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>}
+      {!displayMode && !rightOpen && (selection || selectedLot) && <button className={`hud-toggle hud-toggle-right ${rightOpen ? 'open' : ''}`} onClick={() => setRightOpen(value => !value)} aria-label={rightOpen ? '收起对象详情 HUD' : '展开对象详情 HUD'} aria-expanded={rightOpen}>{rightOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}<span>对象详情</span><Boxes size={18} /></button>}
+      {displayMode && (leftOpen || rightOpen) && <div className="hud-scrim" aria-hidden="true" onClick={() => { setLeftOpen(false); setRightOpen(false); }} />}
+      {leftOpen && <aside className="cockpit-hud hud-left" aria-label="观察台目录"><div className="hud-header"><div><span className="eyebrow">OBSERVATORY</span><h2>{panelLabels[panel]}</h2></div><button className="icon-button" onClick={() => setLeftOpen(false)} aria-label="关闭观察台"><X size={18} /></button></div><div className="inspector-tabs directory-tabs">{directoryTabs.map(([value, label]) => <button key={value} title={`${label}${panelCounts[value] !== undefined ? ` · ${panelCounts[value]}` : ''}`} className={panel === value ? 'active' : ''} onClick={() => setPanel(value)}>{label}</button>)}</div><div className="hud-content">{renderDirectory()}</div><div className="hud-footer"><span className={`status-dot ${problematicSources ? 'amber' : ''}`} />{sources.length ? `${healthySources}/${sources.length} 来源正常` : '等待来源'} · 只读观察</div></aside>}
+      {rightOpen && <aside className="cockpit-hud hud-right" aria-label="对象详情 HUD"><div className="hud-header"><div><span className="eyebrow">OBJECT OBSERVATORY</span><h2>对象与证据</h2></div><button className="icon-button" onClick={() => setRightOpen(false)} aria-label="关闭对象详情"><X size={18} /></button></div>{(selection || selectedLot) && <button className="detail-back" onClick={() => { setSelection(null); setSelectedLot(null); setInsideBuilding(false); setRightOpen(false); if (displayMode) setLeftOpen(true); }}><ChevronLeft size={14} />返回{panelLabels[panel]}</button>}<div className="hud-content">{renderInspector()}</div><div className="hud-footer"><ShieldCheck size={12} />只观察，不调度或控制执行</div></aside>}
       <div className="world-bottomline"><div className="world-legend"><button className="world-legend-button" onClick={() => setLegendOpen(true)} aria-label="打开图例说明" aria-haspopup="dialog"><CircleHelp size={15} />图例</button></div><div className="world-directory">{activeNode && <button onClick={() => { setSelection(null); setSelectedLot(null); setInsideBuilding(false); setRightOpen(false); }}><ChevronLeft size={14} />基地</button>}<button onClick={() => openPanel('nodes')}><Server size={14} />{nodeKnown ? nodes.length : '—'} 设备</button><button onClick={() => openPanel('capabilities')}><Boxes size={14} />{catalogKnown ? services.length : '—'} 服务</button><button onClick={() => openPanel('voyages')}><Rocket size={14} />航次 <span>{voyageSourceKnown ? voyages.length : '—'}</span></button><button onClick={() => openPanel('events')}><Activity size={14} />观察事件 <span>{events.length}</span></button></div></div>
       {legendOpen && <SceneLegend snapshot={snapshot} showConnections={showConnections} onClose={() => setLegendOpen(false)} />}
     </main>
