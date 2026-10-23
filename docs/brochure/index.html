@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>一伴 · Personal Agent infra — A 方案</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #05080F; }
+  :root{
+    --ink:#E9F2FB; --muted:#93A8C2; --dim:#61748D;
+    --cyan:#6FD8EF; --violet:#9B8CFF; --gold:#E7B36A;
+    --line:rgba(126,166,206,.18);
+  }
+  .page{
+    position:relative; width:297mm; height:210mm; overflow:hidden;
+    background:
+      radial-gradient(70% 55% at 78% 38%, rgba(48,96,190,.20) 0%, rgba(5,8,15,0) 62%),
+      radial-gradient(40% 40% at 96% 82%, rgba(120,90,220,.12) 0%, rgba(5,8,15,0) 66%),
+      #05080F;
+    color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Avenir Next","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stars{ position:absolute; inset:0; opacity:.55;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.75), transparent 100%),
+      radial-gradient(1px 1px at 28% 62%, rgba(255,255,255,.5), transparent 100%),
+      radial-gradient(1px 1px at 44% 30%, rgba(255,255,255,.55), transparent 100%),
+      radial-gradient(1px 1px at 61% 74%, rgba(255,255,255,.45), transparent 100%),
+      radial-gradient(1px 1px at 73% 12%, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(1px 1px at 88% 46%, rgba(255,255,255,.5), transparent 100%),
+      radial-gradient(1px 1px at 92% 78%, rgba(255,255,255,.4), transparent 100%),
+      radial-gradient(1px 1px at 6% 86%, rgba(255,255,255,.45), transparent 100%);
+  }
+
+  /* ---------- 主视觉：星球 ---------- */
+  .orb{ position:absolute; right:-10mm; top:8mm; width:150mm; height:138mm; overflow:hidden;
+        -webkit-mask-image:radial-gradient(closest-side, #000 52%, rgba(0,0,0,.8) 74%, transparent 98%),
+                            linear-gradient(180deg, #000 62%, rgba(0,0,0,.75) 84%, transparent 100%);
+        -webkit-mask-composite:source-in;
+        mask-image:radial-gradient(closest-side, #000 52%, rgba(0,0,0,.8) 74%, transparent 98%),
+                   linear-gradient(180deg, #000 62%, rgba(0,0,0,.75) 84%, transparent 100%);
+        mask-composite:intersect; }
+  .orb img{ position:absolute; width:384mm; height:216mm; left:-120mm; top:-33mm; filter:saturate(1.08) contrast(1.05); }
+  .orb-halo{ position:absolute; right:-4mm; top:18mm; width:140mm; height:130mm; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(96,190,255,.13), rgba(96,190,255,0) 70%); }
+
+  /* ---------- 顶部 ---------- */
+  .top{ position:absolute; left:16mm; right:16mm; top:13mm; display:flex; align-items:flex-start; justify-content:space-between; }
+  .lockup{ display:flex; align-items:center; gap:3.4mm; }
+  .mark{ width:8.6mm; height:8.6mm; }
+  .word{ display:flex; align-items:baseline; gap:2.6mm; }
+  .word b{ font-size:7.6mm; font-weight:600; letter-spacing:.14em; line-height:1; }
+  .word span{ font-family:"Avenir Next","Helvetica Neue",sans-serif; font-size:2.4mm; letter-spacing:.34em; color:var(--dim); }
+  .meta{ text-align:right; font-family:"Avenir Next","Helvetica Neue",sans-serif; }
+  .meta .en{ font-size:2.5mm; letter-spacing:.26em; color:var(--cyan); }
+  .meta .cn{ margin-top:1.6mm; font-size:2.6mm; letter-spacing:.16em; color:var(--dim); }
+
+  /* ---------- 文案 ---------- */
+  .lead{ position:absolute; left:16mm; top:37mm; width:132mm; }
+  .eyebrow{ display:flex; align-items:center; gap:3mm; font-family:"Avenir Next","Helvetica Neue",sans-serif;
+    font-size:2.35mm; letter-spacing:.3em; color:var(--cyan); text-transform:uppercase; }
+  .eyebrow i{ display:block; width:9mm; height:.25mm; background:var(--cyan); opacity:.65; }
+  h1{ margin-top:6.2mm; font-size:15.6mm; line-height:1.24; font-weight:600; letter-spacing:.05em; }
+  h1 em{ font-style:normal; color:var(--cyan); }
+  .sub-en{ margin-top:5.4mm; font-family:"Avenir Next","Helvetica Neue",sans-serif; font-size:6.2mm;
+    font-weight:400; letter-spacing:.16em; color:#C6D8E8; }
+  .sub-cn{ margin-top:1.8mm; font-size:2.45mm; letter-spacing:.26em; color:var(--dim); }
+  .lede{ margin-top:7.6mm; width:112mm; font-size:3.35mm; line-height:1.95; color:var(--muted); letter-spacing:.02em; }
+  .lede b{ color:var(--ink); font-weight:500; }
+
+  /* ---------- 三行释义 ---------- */
+  .lines{ position:absolute; left:16mm; top:129mm; width:140mm; }
+  .ln{ display:flex; align-items:baseline; margin-top:7.2mm; font-size:3.3mm; line-height:1.6; letter-spacing:.02em; }
+  .ln:first-child{ margin-top:0; }
+  .ln b{ flex:0 0 20mm; font-size:4.05mm; font-weight:600; letter-spacing:.1em; color:var(--ink); }
+  .ln em{ font-style:normal; color:var(--cyan); margin-right:3.6mm; font-size:2.2mm; opacity:.9; }
+  .ln span{ color:var(--muted); }
+
+  /* ---------- 页脚 ---------- */
+  .foot{ position:absolute; left:16mm; right:16mm; bottom:9.5mm; display:flex; align-items:center; gap:9mm;
+    font-family:"Avenir Next","PingFang SC",sans-serif; font-size:2.3mm; letter-spacing:.12em; color:var(--dim); }
+  .foot .mid{ display:flex; gap:5mm; }
+  .foot .mid span::before{ content:"·"; margin-right:1.8mm; color:var(--cyan); opacity:.7; }
+  .foot .mid span:first-child::before{ content:""; margin:0; }
+  .foot .tag{ color:#8FA8C4; letter-spacing:.18em; }
+
+  .orb-cap{ position:absolute; left:170mm; top:152mm; display:flex; align-items:center; gap:2.6mm;
+    font-family:"Avenir Next","PingFang SC",sans-serif; font-size:2.15mm; letter-spacing:.12em; color:var(--dim); }
+  .orb-cap i{ display:block; width:6mm; height:.2mm; background:var(--cyan); opacity:.7; }
+  .orb-cap b{ color:#B7CBE0; font-weight:500; letter-spacing:.16em; }
+  .orb-cap em{ font-style:normal; color:#7C93AC; }
+
+  .closing{ position:absolute; left:16mm; top:171mm; padding-top:5mm; border-top:.25mm solid var(--line); width:96mm;
+    font-size:5.1mm; font-weight:500; letter-spacing:.12em; color:#C6D8E8; }
+  .closing i{ display:inline-block; width:8mm; height:.35mm; background:var(--cyan); margin-right:3.6mm; vertical-align:.35em; opacity:.85; }
+
+  .qr{ position:absolute; right:16mm; bottom:21mm; width:25mm; text-align:center; }
+  .qr-box{ width:25mm; height:25mm; background:#fff; border-radius:1.1mm; padding:1.7mm; }
+  .qr-box img{ width:100%; height:100%; display:block; }
+  .qr-cap{ margin-top:2.2mm; font-family:"Avenir Next","PingFang SC",sans-serif; font-size:1.8mm;
+    letter-spacing:.14em; color:var(--dim); line-height:1.4; }
+  .qr-cap b{ color:#B7CBE0; font-weight:500; }
+
+  .corner{ position:absolute; width:5.5mm; height:5.5mm; border:.25mm solid rgba(111,216,239,.4); }
+  .c-tl{ left:8mm; top:8mm; border-right:0; border-bottom:0; }
+  .c-tr{ right:8mm; top:8mm; border-left:0; border-bottom:0; }
+  .c-bl{ left:8mm; bottom:8mm; border-right:0; border-top:0; }
+  .c-br{ right:8mm; bottom:8mm; border-left:0; border-top:0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="stars"></div>
+  <div class="orb-halo"></div>
+  <div class="orb"><img src="assets/universe-focus.jpg" alt="能力宇宙中的设备星球"></div>
+
+  <div class="corner c-tl"></div><div class="corner c-tr"></div>
+  <div class="corner c-bl"></div><div class="corner c-br"></div>
+
+  <header class="top">
+    <div class="lockup">
+      <svg class="mark" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="8.6" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <circle cx="8.8" cy="23" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <circle cx="23.2" cy="23" r="3" stroke="#6FD8EF" stroke-width="1.1"/>
+        <path d="M16 11.6 L10.6 20.2 M16 11.6 L21.4 20.2 M11.8 23 H20.2" stroke="#6FD8EF" stroke-width=".8" opacity=".5"/>
+        <circle cx="16" cy="8.6" r=".9" fill="#6FD8EF"/>
+        <circle cx="8.8" cy="23" r=".9" fill="#6FD8EF"/>
+        <circle cx="23.2" cy="23" r=".9" fill="#6FD8EF"/>
+      </svg>
+      <div class="word"><b>一伴</b><span>YIBAN</span></div>
+    </div>
+  </header>
+
+  <section class="lead">
+    <div class="eyebrow"><i></i>Distributed Intelligence Network</div>
+    <h1>小蓝同学的<br><em>天生另一半</em></h1>
+    <div class="sub-en">Personal Agent infra</div>
+    <div class="sub-cn">个人智能体基础设施</div>
+    <p class="lede">一台设备接进网络，就成为一个能力节点。<b>换设备、换模型、换工具链，都不用再配置一次。</b></p>
+  </section>
+
+  <section class="lines">
+    <p class="ln"><b>记忆保存</b><em>◆</em><span>上下文、项目与产出留在自己的节点，换设备也不重来。</span></p>
+    <p class="ln"><b>工具就位</b><em>◆</em><span>手机、电脑、服务器的能力接上就能调用，不用逐台配置。</span></p>
+    <p class="ln"><b>技能在线</b><em>◆</em><span>每个技能包都是一个星点，上线即被发现、被调用。</span></p>
+  </section>
+
+  <div class="orb-cap"><i></i><b>能力宇宙</b><em>一台设备一颗星球，环上每颗星是一个可见技能</em></div>
+
+  <div class="closing"><i></i>一张网，装下你所有的智能体</div>
+
+  <div class="qr">
+    <div class="qr-box"><img src="assets/qr-release.svg" alt="发布页二维码"></div>
+    <div class="qr-cap"><b>扫码看发布页</b><br>v0.1.0</div>
+  </div>
+
+  <footer class="foot">
+    <div>一伴 · PERSONAL AGENT INFRA</div>
+    <div class="mid"><span>设备即节点</span><span>能力图谱</span><span>跨端直连</span><span>只读可观测</span></div>
+  </footer>
+</div>
+</body>
+</html>
