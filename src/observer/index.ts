@@ -22,18 +22,26 @@ export function createObserver(config: ObserverConfig) {
   let collecting: { scope: string; promise: Promise<ObserverSnapshot> } | undefined;
   let targetScope = JSON.stringify([...config.nodeUrls].sort());
   let knownTargets = new Map<string, NodeTarget>();
+  const missingRounds = new Map<string, number>();
+  // A device missing from the address book is kept for a grace period: an empty or
+  // temporarily smaller listing is not evidence that a device was removed, but one
+  // that stays missing for as long as its cached evidence may live is finally dropped.
+  const graceRounds = Math.max(1, Math.ceil(config.staleAfterMs / config.refreshIntervalMs));
   async function collectSnapshot(scope: string, previousTargets: ReadonlyMap<string, NodeTarget>): Promise<ObserverSnapshot> {
     const now = new Date().toISOString();
     const [discovery, executions] = await Promise.all([discoverNodes(config), Promise.all(acp.map(adapter => adapter.read(now)))]);
     const targets = new Map(discovery.targets.slice(0, config.maxNodes).map(target => [target.url, target]));
-    let retained = 0, omitted = discovery.targets.length > targets.size;
-    // An empty or temporarily smaller address book is not evidence that a device
-    // was removed. Recheck known addresses, without reusing old network presence.
+    let retained = 0, dropped = 0, omitted = discovery.targets.length > targets.size;
+    for (const url of targets.keys()) missingRounds.delete(url);
     for (const [url, target] of previousTargets) if (!targets.has(url)) {
+      const missing = (missingRounds.get(url) ?? 0) + 1;
+      if (missing > graceRounds) { missingRounds.delete(url); dropped += 1; continue; }
+      missingRounds.set(url, missing);
       if (targets.size >= config.maxNodes) { omitted = true; continue; }
       targets.set(url, { ...target, networkOnline: null }); retained += 1;
     }
     if (retained) discovery.diagnostics.push(`本轮地址簿未列出 ${retained} 个已知地址，已继续探查；未沿用旧网络在线状态`);
+    if (dropped) discovery.diagnostics.push(`${dropped} 个已知地址连续 ${graceRounds} 轮未出现在地址簿，已停止探查并移出观察范围`);
     if (omitted) discovery.diagnostics.push(`已达到 ${config.maxNodes} 个节点的扫描上限，部分已知地址未探查`);
     if (targetScope === scope) knownTargets = targets;
     const nodeResults = await mapConcurrent([...targets.values()], 6, target => nodes.read(target, now));
@@ -57,7 +65,7 @@ export function createObserver(config: ObserverConfig) {
     async snapshot(mode: 'live' | 'demo' = 'live', refresh = false): Promise<ObserverSnapshot> {
       if (mode === 'demo') return createDemoSnapshot();
       const scope = JSON.stringify([...config.nodeUrls].sort());
-      if (scope !== targetScope) { targetScope = scope; knownTargets = new Map(); latest = undefined; }
+      if (scope !== targetScope) { targetScope = scope; knownTargets = new Map(); missingRounds.clear(); latest = undefined; }
       if (!refresh && latest && Date.now() - Date.parse(latest.generatedAt) < config.refreshIntervalMs) return latest;
       if (!collecting || collecting.scope !== scope) {
         const pending = { scope, promise: collectSnapshot(scope, knownTargets) };

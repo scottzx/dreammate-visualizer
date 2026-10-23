@@ -120,6 +120,32 @@ test('known device probes respect maxNodes and stay inside the configured source
   assert.notEqual(changed.layoutScope, capped.layoutScope);
 });
 
+test('a device missing from the address book is kept for the grace period and then dropped', async t => {
+  let directory = ['alpha'];
+  const reads: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (input: string) => {
+    const url = new URL(input);
+    if (url.pathname === '/nodes') return Response.json({ nodes: directory.map(id => ({ node_id: id, ipv4: `${id}.test`, network_online: true })) });
+    const node_id = url.hostname.split('.')[0];
+    if (url.pathname === '/manifest') reads.push(node_id);
+    return Response.json(url.pathname === '/health' ? { node_id } : { node_id, name: node_id, services: [] });
+  });
+  // staleAfterMs / refreshIntervalMs = 2 rounds of grace.
+  const observer = createObserver(parseConfig({ nodeUrls: ['http://seed.test:36908'], refreshIntervalMs: 60000, staleAfterMs: 120000 }, {}));
+  const listed = await observer.snapshot('live', true);
+  assert.deepEqual(listed.nodes.map(node => node.nativeId).sort(), ['alpha', 'seed']);
+  directory = [];
+  for (const round of [1, 2]) {
+    const kept = await observer.snapshot('live', true);
+    assert.deepEqual(kept.nodes.map(node => node.nativeId).sort(), ['alpha', 'seed'], `round ${round} still keeps the missing device`);
+  }
+  reads.length = 0;
+  const dropped = await observer.snapshot('live', true);
+  assert.deepEqual(dropped.nodes.map(node => node.nativeId), ['seed'], 'a device missing for the whole grace period leaves the observed range');
+  assert.deepEqual(reads, ['seed'], 'a dropped device is no longer probed');
+  assert.ok(dropped.limitations.some(note => note.includes('未出现在地址簿')), 'the removal is reported instead of silently shrinking');
+});
+
 test('demonstration snapshot is isolated and entity references resolve', () => {
   const snapshot = createDemoSnapshot(new Date('2026-10-22T09:00:00Z'));
   assert.equal(snapshot.mode, 'demo');

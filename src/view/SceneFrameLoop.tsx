@@ -17,6 +17,12 @@ export default function SceneFrameLoop({ animate, element }: { animate: boolean;
       // R3F's global RAF uses milliseconds and can otherwise draw one leftover frame.
       if (document.hidden || animate) get().internal.frames = 0;
       setFrameloop(document.hidden || animate ? 'never' : 'demand');
+      // Keep label hover and diagnostics clocks monotonic across pause/visibility changes.
+      // setFrameloop() stops the clock, and Clock.stop() clears autoStart; that is what
+      // keeps advance() from restarting the clock and resetting elapsedTime to 0, which
+      // would make the first frame after a pause jump by the whole session time.
+      // tests/render-budget.test.ts asserts that invariant, because three has
+      // deprecated Clock in favour of Timer.
       get().clock.elapsedTime = elapsed;
       if (document.hidden) return;
       if (!animate) { invalidate(); return; }

@@ -1,9 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Vector3 } from 'three';
+import { Clock, Vector3 } from 'three';
 import { Line2, LineGeometry } from 'three-stdlib';
 import { ANIMATION_FPS, scheduleAnimationFrames } from '../src/view/frame-scheduler';
 import { updateEvidenceLine } from '../src/view/evidence-line';
+
+// SceneFrameLoop drives the scene clock by hand. R3F's advance() calls clock.getDelta()
+// before applying our timestamp, and getDelta() restarts a clock whose autoStart flag is
+// still set - and Clock.start() resets elapsedTime to 0. That would make the first frame
+// after a pause advance by the whole session time. The scene only works because
+// Clock.stop() clears autoStart. three has deprecated Clock in favour of Timer, so this
+// invariant is asserted here: if a dependency upgrade breaks it, the test fails loudly
+// instead of the scene silently jumping.
+test('three Clock.stop() keeps the hand-driven scene clock from restarting on its own', () => {
+  const clock = new Clock();
+  clock.start();
+  clock.elapsedTime = 42;
+  clock.stop();
+  assert.equal(clock.autoStart, false, 'Clock.stop() must clear autoStart, or advance() would reset elapsedTime and jump the scene');
+  assert.equal(clock.getDelta(), 0, 'a stopped clock must not restart on its own');
+  assert.ok(clock.elapsedTime >= 42, 'a stopped clock must keep the elapsed time the manual loop handed over instead of resetting it');
+  clock.getElapsedTime();
+  assert.ok(clock.elapsedTime >= 42, 'reading the elapsed time must not restart the clock either');
+});
 
 test('animation rendering stays at 30 fps on 60, 120 and 144 Hz displays and cancels cleanly', () => {
   for (const hz of [60, 120, 144]) {
