@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { EventView, ObserverSnapshot } from '../src/read-model/types';
-import { createFactoryLayout, factoryConnections, isRecentFactoryEvent, stableNodeHash } from '../src/view/layout';
+import { createDemoSnapshot } from '../src/observer/demo';
+import { createFactoryLayout, factoryConnections, isRecentFactoryEvent, resolveSkillSelection, selectionNodeIds, stableNodeHash } from '../src/view/layout';
 
 const identityPositions = (layout: ReturnType<typeof createFactoryLayout>) =>
   [...layout.plots].map(([id, plot]) => [id, plot.x, plot.z]).sort();
@@ -85,4 +86,26 @@ test('historical links appear on selection and a selected job does not collect u
   assert.deepEqual(factoryConnections(data, { type: 'event', id: 'historical' }, visible, referenceTime).map((item) => item.id), ['historical']);
   assert.deepEqual(factoryConnections(data, { type: 'job', id: 'job:one' }, visible, referenceTime).map((item) => item.id), ['historical']);
   assert.equal(factoryConnections(data, { type: 'node', id: 'b' }, visible, referenceTime).length, 2);
+});
+
+test('Skill selection resolves the owning service when devices share the same Skill ID and name', () => {
+  const data = createDemoSnapshot(), template = data.services[0];
+  data.services = [
+    { ...template, id: 'service:mac:skills', nodeId: data.nodes[0].id, skills: [{ id: 'shared-skill', name: '相同名称', description: 'Mac 上的技能概要。' }] },
+    { ...template, id: 'service:pc:skills', nodeId: data.nodes[1].id, skills: [{ id: 'shared-skill', name: '相同名称', description: 'PC 上的技能概要。' }] },
+  ];
+  const selection = { type: 'skill' as const, id: 'shared-skill', serviceId: 'service:pc:skills' };
+  assert.equal(resolveSkillSelection(data, selection)?.skill.description, 'PC 上的技能概要。');
+  assert.deepEqual([...selectionNodeIds(data, selection)], [data.nodes[1].id]);
+  data.services.reverse();
+  assert.equal(resolveSkillSelection(data, selection)?.skill.description, 'PC 上的技能概要。', 'snapshot order cannot switch the selected Skill');
+  assert.deepEqual([...selectionNodeIds(data, { ...selection, serviceId: 'service:mac:skills' })], [data.nodes[0].id]);
+
+  data.services.find(service => service.id === selection.serviceId)!.skills = [];
+  assert.equal(resolveSkillSelection(data, selection), undefined, 'a removed Skill cannot fall back to the other device');
+  assert.deepEqual([...selectionNodeIds(data, selection)], [], 'an absent Skill cannot focus its former owner');
+  data.services = data.services.filter(service => service.id !== selection.serviceId);
+  assert.equal(resolveSkillSelection(data, selection), undefined, 'a removed service cannot fall back to another matching Skill ID');
+  assert.deepEqual([...selectionNodeIds(data, selection)], []);
+  assert.equal(resolveSkillSelection(data, { type: 'service', id: 'shared-skill' }), undefined);
 });

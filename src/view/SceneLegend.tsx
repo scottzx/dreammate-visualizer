@@ -51,7 +51,7 @@ export default function SceneLegend({ snapshot, showConnections, onClose }: {
       <section className="scene-legend-section">
         <h3>卫星与星点</h3>
         <div className="scene-legend-symbols"><span><b className="legend-satellite">◈</b>一颗卫星 = 一个可见服务</span><span><b className="legend-skill">✦</b>一个星点 = 一个可见 Skill 包</span></div>
-        <p>Skill 按目录 ID 去重；目录部分覆盖时，只展示已观测到的条目。公转为示意，不表示实时任务。</p>
+        <p>点击卫星查看服务方法，点击 Skill 星点阅读完整文档。Skill 按目录 ID 去重；目录部分覆盖时，只展示已观测到的条目。公转为示意，不表示实时任务。</p>
       </section>
       <section className="scene-legend-section">
         <h3>球面颜色 · 项目存储占比</h3>

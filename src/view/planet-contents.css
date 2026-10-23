@@ -27,3 +27,36 @@
 .project-footprint-details strong { font-size: 10px; font-weight: normal; color: #b1c6d5; }
 .project-footprint-details strong i { margin-right: 6px; }
 .project-footprint-details code, .project-footprint-details small { font-size: 9px; color: #8f9fae; overflow-wrap: anywhere; line-height: 1.7; }
+.skill-list-item { color: inherit; }
+.skill-list-item > strong { display: block; overflow-wrap: anywhere; }
+.skill-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.skill-document-details { min-width: 0; }
+.skill-document { color: #bfd0df; font-size: 12px; line-height: 1.85; overflow-wrap: anywhere; }
+.skill-document h1, .skill-document h2, .skill-document h3, .skill-document h4, .skill-document h5, .skill-document h6 { margin: 22px 0 10px; color: #e0edf7; font-weight: 550; line-height: 1.55; }
+.skill-document h1 { font-size: 18px; }
+.skill-document h2 { font-size: 15px; padding-bottom: 7px; border-bottom: 1px solid #8aafca25; }
+.skill-document h3 { font-size: 13px; }
+.skill-document h4, .skill-document h5, .skill-document h6 { font-size: 12px; }
+.skill-document p, .skill-document ul, .skill-document ol, .skill-document blockquote, .skill-document pre, .skill-document-table { margin: 12px 0; }
+.skill-document ul, .skill-document ol { padding-left: 21px; }
+.skill-document li { margin: 5px 0; }
+.skill-document li > p { margin: 6px 0; }
+.skill-document blockquote { margin-left: 0; padding: 1px 12px; border-left: 2px solid #609bad; color: #9db6c9; background: #83c6df08; }
+.skill-document code { font: 10px/1.7 'SFMono-Regular', Consolas, monospace; padding: 2px 4px; background: #020d1a88; border-radius: 3px; color: #d9e3f0; }
+.skill-document pre { max-width: 100%; overflow-x: auto; padding: 12px; background: #020d1aaa; border: 1px solid #8aafca26; border-radius: 4px; }
+.skill-document pre code { white-space: pre; padding: 0; background: none; }
+.skill-document hr { margin: 20px 0; border: 0; border-top: 1px solid #8aafca35; }
+.skill-document a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.skill-document-table { max-width: 100%; overflow-x: auto; }
+.skill-document table { border-collapse: collapse; min-width: 100%; font-size: 11px; }
+.skill-document th, .skill-document td { border: 1px solid #8aafca35; padding: 7px 9px; text-align: left; }
+.skill-document th { color: #d9edf2; background: #83c6df0d; }
+.skill-document-reference { color: #aebbcf; text-decoration: underline dotted #8aafca66; text-underline-offset: 3px; }
+.skill-document-metadata { margin: 14px 0; color: #8ba5ba; font-size: 10px; }
+.skill-document-metadata summary { cursor: pointer; padding: 5px 0; }
+.skill-document-metadata pre { max-height: 240px; }
+.skill-document-status { display: flex; align-items: center; gap: 8px; padding: 18px 0; color: #9db6c9; font-size: 11px; line-height: 1.8; }
+.skill-document-error { margin: 17px 0; font-size: 11px; line-height: 1.8; color: #e5bf91; }
+.skill-document-error .button { margin-top: 12px; }
+.skill-document-fallback { border-top: 1px solid #8aafca25; margin-top: 17px; padding-top: 13px; color: #a5b9ca; }
+.skill-document-fallback p { margin-top: 8px; }

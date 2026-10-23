@@ -6,6 +6,7 @@ import { createObserver, type Observer } from '../observer/index';
 import { loadConfig } from '../observer/config';
 import { redactSnapshot } from './privacy';
 import { redactIpText } from '../read-model/ip-privacy';
+import { readSkillDocument, SkillDocumentError } from '../adapters/skills';
 
 const mime: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json' };
 function json(res: ServerResponse, status: number, data: unknown) { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }); res.end(JSON.stringify(data)); }
@@ -21,6 +22,34 @@ export function createObserverServer(observer: Observer, staticDirectory = path.
         if (mode !== 'live' && mode !== 'demo') return json(res, 400, { error: 'mode 必须是 live 或 demo' });
         const snapshot = await observer.snapshot(mode, url.searchParams.get('refresh') === '1');
         return json(res, 200, redactSnapshot(snapshot));
+      }
+      if (url.pathname === '/api/skill') {
+        const allowed = new Set(['mode', 'serviceId', 'skillId', 'revision']);
+        for (const key of url.searchParams.keys()) if (!allowed.has(key) || url.searchParams.getAll(key).length !== 1)
+          return json(res, 400, { error: 'Skill 接口仅接受 mode、serviceId、skillId 与 revision。' });
+        const mode = url.searchParams.get('mode') ?? 'live';
+        if (mode !== 'live' && mode !== 'demo') return json(res, 400, { error: 'mode 必须是 live 或 demo' });
+        const serviceId = url.searchParams.get('serviceId'), skillId = url.searchParams.get('skillId');
+        const revision = url.searchParams.get('revision') ?? undefined;
+        if (!serviceId || serviceId.length > 4096 || serviceId.includes('\0') || !skillId || skillId.length > 256 || skillId.includes('\0') || (revision !== undefined && (!revision || revision.length > 128 || revision.includes('\0'))))
+          return json(res, 400, { error: '需要有效的 serviceId、skillId 与可选 revision。' });
+        const snapshot = await observer.snapshot(mode);
+        if (snapshot.mode !== mode) return json(res, 503, { error: 'Skill 数据模式不匹配，请重试。' });
+        const published = redactSnapshot(snapshot);
+        const serviceIndex = published.services.findIndex(service => service.id === serviceId);
+        const skillIndex = published.services[serviceIndex]?.skills.findIndex(skill => skill.id === skillId) ?? -1;
+        if (serviceIndex < 0 || skillIndex < 0) return json(res, 404, { error: '该 Skill 不在当前可见目录中。' });
+        const publicSkill = published.services[serviceIndex].skills[skillIndex];
+        if (revision !== undefined && revision !== publicSkill.revision)
+          return json(res, 409, { error: 'Skill 版本已变化，请刷新能力目录后重试。' });
+        const service = snapshot.services[serviceIndex], skill = service.skills[skillIndex];
+        try {
+          const document = await readSkillDocument(snapshot, observer.config, { serviceId: service.id, skillId: skill.id, revision: skill.revision });
+          return json(res, 200, { skillId, name: redactIpText(document.name), revision: document.revision && redactIpText(document.revision), markdown: redactIpText(document.markdown) });
+        } catch (error) {
+          if (error instanceof SkillDocumentError) return json(res, error.status, { error: redactIpText(error.message) });
+          throw error;
+        }
       }
       if (url.pathname.startsWith('/api/')) return json(res, 404, { error: '观察接口不存在' });
       let filePath = path.resolve(staticDirectory, `.${decodeURIComponent(url.pathname)}`);

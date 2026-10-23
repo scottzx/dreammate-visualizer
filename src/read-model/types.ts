@@ -11,6 +11,7 @@ export interface NodeStorageView { totalBytes: number; observedAt: string; sourc
 export interface NodeView { id: string; nativeId: string; name: string; address: string; platform: string; online: boolean | null; networkOnline?: boolean | null; catalogAvailable?: boolean; storage?: NodeStorageView; device?: DeviceInfoView; status: CoverageStatus; observedAt: string | null; serviceIds: string[]; agentStatus: 'unknown' | 'running' | 'waiting'; evidence: Evidence[] }
 export interface MethodView { name: string; description: string; protocol?: Protocol }
 export interface SkillView { id: string; name: string; description: string; revision?: string }
+export interface SkillDocumentView { skillId: string; name: string; revision?: string; markdown: string }
 export interface ServiceView { id: string; nativeId: string; nodeId: string; name: string; description: string; kind: ServiceKind | string; status: 'up' | 'down' | 'unknown'; observedAt: string | null; methods: MethodView[]; skills: SkillView[]; skillsStatus?: CoverageStatus; skillsObservedAt?: string | null; sharing: string; evidence: Evidence[] }
 export interface SessionLink { id: string; provider?: string; confirmed: boolean; locator?: string }
 export interface AttemptView { id: string; nativeId: string; status: WorkStatus; sourceStatus: string; nodeId?: string; agent?: string; startedAt?: string; updatedAt: string; session?: SessionLink; evidence: Evidence[] }
@@ -24,5 +25,6 @@ export interface ProjectStorageView {
 }
 export interface ProjectView { id: string; name: string; nodeIds: string[]; sessionCount: number | null; providers: { name: string; count: number }[]; status: CoverageStatus; observedAt: string | null; evidence: Evidence[]; storage?: ProjectStorageView[] }
 export interface ObserverSnapshot { version: 1; mode: DataMode; layoutScope?: string; serviceNodeId?: string; privacy?: { ipAddresses: 'hidden' }; generatedAt: string; refreshIntervalMs: number; nodes: NodeView[]; services: ServiceView[]; jobs: JobView[]; events: EventView[]; sources: SourceView[]; limitations: string[]; projects?: ProjectView[]; network?: NetworkTopologyView }
-export interface Selection { type: 'node' | 'service' | 'job' | 'event'; id: string }
+export type Selection = { type: 'node' | 'service' | 'job' | 'event'; id: string }
+  | { type: 'skill'; id: string; serviceId: string };
 export interface FactorySceneProps { snapshot: ObserverSnapshot; selection: Selection | null; onSelect: (selection: Selection | null) => void; visibleNodeIds?: string[]; showConnections?: boolean; resetKey?: number }

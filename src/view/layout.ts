@@ -1,4 +1,4 @@
-import type { EventView, ObserverSnapshot, Selection } from '../read-model/types';
+import type { EventView, ObserverSnapshot, Selection, ServiceView, SkillView } from '../read-model/types';
 
 export interface LayoutAssignment { id: string; slot: number }
 export interface FactoryPlot extends LayoutAssignment { x: number; z: number; variant: number }
@@ -88,12 +88,23 @@ export function isRecentFactoryEvent(event: EventView, referenceTime: number): b
   return Number.isFinite(age) && age >= 0 && age <= EVENT_PULSE_WINDOW_MS;
 }
 
+export function resolveSkillSelection(snapshot: ObserverSnapshot, selection: Selection | null): { service: ServiceView; skill: SkillView } | undefined {
+  if (selection?.type !== 'skill') return undefined;
+  const service = snapshot.services.find(item => item.id === selection.serviceId);
+  const skill = service?.skills.find(item => item.id === selection.id);
+  return service && skill ? { service, skill } : undefined;
+}
+
 export function selectionNodeIds(snapshot: ObserverSnapshot, selection: Selection | null): Set<string> {
   if (!selection) return new Set();
   if (selection.type === 'node') return new Set([selection.id]);
   if (selection.type === 'service') {
     const service = snapshot.services.find((item) => item.id === selection.id);
     return new Set(service ? [service.nodeId] : []);
+  }
+  if (selection.type === 'skill') {
+    const selected = resolveSkillSelection(snapshot, selection);
+    return new Set(selected ? [selected.service.nodeId] : []);
   }
   if (selection.type === 'event') {
     const event = snapshot.events.find((item) => item.id === selection.id);

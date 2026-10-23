@@ -18,3 +18,6 @@
 .universe-satellite-tooltip { position: absolute; z-index: 6; pointer-events: none; width: max-content; max-width: 205px; padding: 8px 11px; background: #081a2aef; border: 1px solid #8bcbdf77; color: #e1f6ff; font-size: 11px; }
 .universe-satellite-tooltip strong, .universe-satellite-tooltip span { display: block; }
 .universe-satellite-tooltip span { margin-top: 4px; color: #9bb5c6; font-size: 10px; }
+.universe-satellite-tooltip strong { overflow-wrap: anywhere; }
+.universe-skill-tooltip { border-color: #e8c78388; color: #fff0cf; }
+[data-orbit-hover="skill"] canvas, [data-orbit-hover="service"] canvas { cursor: pointer; }

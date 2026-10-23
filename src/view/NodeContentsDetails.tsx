@@ -26,6 +26,6 @@ export default function NodeContentsDetails({ snapshot, nodeId }: { snapshot: Ob
     {composition.rows.length > 0 && <div className="planet-storage-categories">{composition.segments.filter(segment => segment.bytes > 0).map(segment => <div key={segment.category}><i style={{ background: PROJECT_COLORS[segment.category] }} /><span>{PROJECT_CATEGORY_LABELS[segment.category]}</span><strong>{formatStorageBytes(segment.bytes)}</strong><small>{formatStorageShare(segment.share)}</small></div>)}</div>}
     <p className="planet-storage-note"><i style={{ background: PROJECT_COLORS.unknown }} />灰色{share === null ? '' : ` ${formatStorageShare(1 - share)}`} · 未探查 / 未归属，包含其他文件及空闲空间。</p>
     {composition.rows.map(row => <details className="planet-project-row" key={`${row.id}:${row.path}`}><summary><i style={{ background: row.bytes !== null && row.status === 'ok' ? PROJECT_COLORS[row.category] : PROJECT_COLORS.unknown }} /><span>{row.name}</span><strong>{row.bytes !== null && row.status === 'ok' ? formatStorageBytes(row.bytes) : '未探查'}</strong></summary><ProjectStorageDetails rows={[row]} /></details>)}
-    <p className="planet-storage-scope">卫星可点击查看服务方法；星点按目录 ID 去重。项目只统计所列目录的存储，含依赖与构建；目录存在不表示正在执行。</p>
+    <p className="planet-storage-scope">点击卫星查看服务方法，点击 Skill 星点阅读完整文档；星点按目录 ID 去重。项目只统计所列目录的存储，含依赖与构建；目录存在不表示正在执行。</p>
   </section>;
 }

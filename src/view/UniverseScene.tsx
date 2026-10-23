@@ -14,7 +14,7 @@ import GalaxyOrbits from './GalaxyOrbits';
 import RelayBeacon from './RelayBeacon';
 import { nodeIsNetworkOnline } from '../read-model/presentation';
 import { planetContents, planetStorageComposition, type PlanetContents, type PlanetStorageComposition } from '../read-model/planet-contents';
-import { CapabilityOrbit, ProjectStorageSurface, type SatelliteHover } from './PlanetContents';
+import { CapabilityOrbit, ProjectStorageSurface, type OrbitHover } from './PlanetContents';
 import { PlanetHologram, UniverseBackdrop, UniverseStars, UNIVERSE_VISUALS } from './UniverseEffects';
 import { factoryConnections, selectionNodeIds, stableNodeHash, type LayoutAssignment } from './layout';
 import { placeUniverseLabels, universeNodeSize, universePeerConnections, UNIVERSE_LAYOUT_STORAGE_KEY,
@@ -112,10 +112,10 @@ function PlanetLoading({ illuminated }: { illuminated: boolean }) {
   return <mesh><sphereGeometry args={[1, 32, 24]} /><meshStandardMaterial color={illuminated ? '#465b70' : '#1b2634'} metalness={0.5} roughness={0.72} /></mesh>;
 }
 
-function Planet({ node, plot, radius, selected, contents, composition, selectedServiceId, animate, time, positions, gestureMoved, onSelect, onEnter, onHover }: {
-  node: NodeView; plot: UniversePlot; radius: number; selected: boolean; contents: PlanetContents; composition: PlanetStorageComposition; selectedServiceId?: string; animate: boolean;
+function Planet({ node, plot, radius, selected, contents, composition, selectedServiceId, selectedSkillId, animate, time, positions, gestureMoved, onSelect, onEnter, onHover }: {
+  node: NodeView; plot: UniversePlot; radius: number; selected: boolean; contents: PlanetContents; composition: PlanetStorageComposition; selectedServiceId?: string; selectedSkillId?: string; animate: boolean;
   time: RefObject<number>; positions: RefObject<Map<string, Vector3>>; gestureMoved: RefObject<boolean>;
-  onSelect: FactorySceneProps['onSelect']; onEnter?: (id: string) => void; onHover: (hover: SatelliteHover) => void;
+  onSelect: FactorySceneProps['onSelect']; onEnter?: (id: string) => void; onHover: (hover: OrbitHover | null) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const planet = useRef<Group>(null);
@@ -168,7 +168,7 @@ function Planet({ node, plot, radius, selected, contents, composition, selectedS
       {illuminated && <PlanetHologram radius={radius} core={relayCenter} color={accent} selected={selected || hovered} animate={animate} />}
       {relayCenter && <RelayBeacon radius={radius} time={time} />}
       {serviceCenter && <RelayBeacon radius={radius} time={time} color="#75e5f1" />}
-      <CapabilityOrbit contents={contents} radius={radius} seed={node.id} time={time} selectedServiceId={selectedServiceId}
+      <CapabilityOrbit contents={contents} radius={radius} seed={node.id} time={time} selectedServiceId={selectedServiceId} selectedSkillId={selectedSkillId}
         gestureMoved={gestureMoved} onSelect={onSelect} onHover={onHover} illuminated={illuminated} />
     </group>
   </group>;
@@ -401,7 +401,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
   const { snapshot, selection, onSelect, showConnections = true, resetKey = 0, paused = false } = props;
   const [webGL, setWebGL] = useState<boolean | null>(null);
   const [lostContext, setLostContext] = useState(false);
-  const [satelliteHover, setSatelliteHover] = useState<SatelliteHover>(null);
+  const [orbitHover, setOrbitHover] = useState<OrbitHover | null>(null);
   const sceneElement = useRef<HTMLDivElement>(null);
   const orbitTime = useRef(0);
   const positions = useRef(new Map<string, Vector3>());
@@ -425,6 +425,8 @@ export default function UniverseScene(props: UniverseSceneProps) {
   const compositionByNode = useMemo(() => new Map(snapshot.nodes.map(node => [node.id, planetStorageComposition(snapshot, node.id)])), [snapshot]);
   const sizes = new Map(snapshot.nodes.map((node) => [node.id, universeNodeSize(snapshot, node.id)]));
   const visibleIds = new Set(visible.map((node) => node.id));
+  const hoverNodeId = orbitHover?.type === 'service' ? orbitHover.service.nodeId
+    : orbitHover?.type === 'skill' ? snapshot.services.find(service => service.id === orbitHover.skill.serviceId)?.nodeId : undefined;
   const visibleKey = JSON.stringify([...visibleIds].sort());
   const peers = useMemo(() => universePeerConnections([...visibleIds]), [visibleKey]);
   const networkPaths = useMemo(() => networkSegments(snapshot.network, visibleIds), [snapshot.network, visibleKey]);
@@ -440,7 +442,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
     } catch { setWebGL(false); }
   }, []);
   const fallback = <UniverseFallback props={props} reason={webGL === null ? '正在准备三维显示。' : lostContext ? '三维显示已中断，已切换到设备星图。' : '当前环境无法启用三维显示，已切换到设备星图。'} />;
-  return <div ref={sceneElement} data-testid="universe-scene" role="region" aria-label={`能力宇宙三维空间；拖动旋转视角，滚轮缩放，触屏单指旋转、双指缩放或平移；单击星球查看指标，双击进入基地。当前服务入口 ${entry.authority} 对应的设备为小太阳系中心；能与它直连的设备做小公转，整个星系绕 DERP 总中心做较慢的大公转。金色为观测的 DERP 中继路径，蓝色为直连，淡线为对等关系示意。细星环上每颗卫星代表一个服务能力，每个星点代表一个可见 Skill 包，球面颜色显示项目存储占比，灰色为未探查或未归属。公转为示意。`}
+  return <div ref={sceneElement} data-testid="universe-scene" role="region" aria-label={`能力宇宙三维空间；拖动旋转视角，滚轮缩放，触屏单指旋转、双指缩放或平移；单击星球查看指标，双击进入基地。当前服务入口 ${entry.authority} 对应的设备为小太阳系中心；能与它直连的设备做小公转，整个星系绕 DERP 总中心做较慢的大公转。金色为观测的 DERP 中继路径，蓝色为直连，淡线为对等关系示意。细星环上每颗卫星代表一个服务能力，每个星点代表一个可见 Skill 包，点击星点阅读完整 Skill 文档。球面颜色显示项目存储占比，灰色为未探查或未归属。公转为示意。`}
     data-projection="perspective" data-sizing="storage-volume"
     data-layout="service-centered-galaxies" data-motion-profile="independent-spatial-orbits-v10" data-label-mode="proximity" data-device-count={snapshot.nodes.length} data-ring-radius={layout.majorRadius.toFixed(4)}
     data-service-domain={entry.authority} data-service-center-node-id={entry.nodeId} data-system-count={layout.systems.length}
@@ -450,17 +452,19 @@ export default function UniverseScene(props: UniverseSceneProps) {
     data-observed-direct-connections={networkCounts.direct} data-observed-relay-connections={networkCounts.derp}
     data-content-model="capability-satellites-skill-stars" data-capability-satellites={visible.reduce((count, node) => count + contentsByNode.get(node.id)!.services.length, 0)}
     data-skill-stars={visible.reduce((count, node) => count + contentsByNode.get(node.id)!.skills.length, 0)}
+    data-orbit-hover={orbitHover?.type ?? ''}
     data-peer-connections={showConnections ? peers.length : 0} data-highlighted-peer-connections={showConnections ? peers.filter(({ from, to }) => selected.has(from) || selected.has(to)).length : 0}
     data-effects-running={animate ? 'true' : 'false'}
     onPointerDownCapture={(event) => { gestureMoved.current = false; pointerOrigin.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }; }}
     onPointerMoveCapture={(event) => {
       const start = pointerOrigin.current;
       if (start && (event.pointerId !== start.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6)) gestureMoved.current = true;
+      if (event.buttons && gestureMoved.current) setOrbitHover(null);
       const bounds = event.currentTarget.getBoundingClientRect();
       labelPointer.current = event.pointerType === 'touch' ? null : { x: event.clientX - bounds.left, y: event.clientY - bounds.top,
         dragging: event.buttons !== 0 && gestureMoved.current };
     }}
-    onPointerLeave={() => { labelPointer.current = null; }}
+    onPointerLeave={() => { labelPointer.current = null; setOrbitHover(null); }}
     onPointerCancelCapture={() => { gestureMoved.current = true; pointerOrigin.current = null; labelPointer.current = null; }}
     style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: UNIVERSE_VISUALS.background }}>
     {webGL && !lostContext ? <SceneBoundary fallback={<UniverseFallback props={props} reason="三维素材加载失败，已切换到设备星图。" />}>
@@ -489,8 +493,9 @@ export default function UniverseScene(props: UniverseSceneProps) {
         {connections.map((event) => <EvidenceConnection key={event.id} event={event} positions={positions} gestureMoved={gestureMoved} onSelect={onSelect} />)}
         {visible.map((node) => <Planet key={node.id} node={node} plot={layout.plots.get(node.id)!} radius={sizes.get(node.id)!}
           selected={selected.has(node.id)} contents={contentsByNode.get(node.id)!} composition={compositionByNode.get(node.id)!}
-          selectedServiceId={selection?.type === 'service' ? selection.id : undefined} animate={animate} time={orbitTime} positions={positions}
-          gestureMoved={gestureMoved} onSelect={onSelect} onEnter={props.onEnterNode} onHover={setSatelliteHover} />)}
+          selectedServiceId={selection?.type === 'service' ? selection.id : undefined}
+          selectedSkillId={selection?.type === 'skill' && selected.has(node.id) ? selection.id : undefined} animate={animate} time={orbitTime} positions={positions}
+          gestureMoved={gestureMoved} onSelect={onSelect} onEnter={props.onEnterNode} onHover={setOrbitHover} />)}
         <LabelsProjection nodes={visible} layout={layout} sizes={sizes} elements={labels} selected={selected} positions={positions} sceneElement={sceneElement} pointer={labelPointer} />
       </Canvas>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}>
@@ -501,9 +506,10 @@ export default function UniverseScene(props: UniverseSceneProps) {
           services={node.catalogAvailable || snapshot.services.some((service) => service.nodeId === node.id) ? snapshot.services.filter((service) => service.nodeId === node.id).length : null} onSelect={onSelect} onEnter={props.onEnterNode}
           elementRef={(element) => { if (element) labels.current.set(node.id, element); else labels.current.delete(node.id); }} />)}
       </div>
-      {satelliteHover && visibleIds.has(satelliteHover.service.nodeId) && <div role="tooltip" className="universe-satellite-tooltip"
-        style={{ left: Math.max(8, Math.min((sceneElement.current?.clientWidth ?? 1280) - 220, satelliteHover.clientX - (sceneElement.current?.getBoundingClientRect().left ?? 0) + 14)), top: Math.max(8, satelliteHover.clientY - (sceneElement.current?.getBoundingClientRect().top ?? 0) - 54) }}>
-        <strong>{satelliteHover.service.name}</strong><span>{satelliteHover.service.methods.length} 个方法 · 点击查看能力</span>
+      {orbitHover && hoverNodeId && visibleIds.has(hoverNodeId) && <div role="tooltip" className={`universe-satellite-tooltip${orbitHover.type === 'skill' ? ' universe-skill-tooltip' : ''}`}
+        style={{ left: Math.max(8, Math.min((sceneElement.current?.clientWidth ?? 1280) - 220, orbitHover.clientX - (sceneElement.current?.getBoundingClientRect().left ?? 0) + 14)), top: Math.max(8, orbitHover.clientY - (sceneElement.current?.getBoundingClientRect().top ?? 0) - 54) }}>
+        <strong>{orbitHover.type === 'skill' ? orbitHover.skill.name : orbitHover.service.name}</strong>
+        <span>{orbitHover.type === 'skill' ? 'Skill · 点击阅读文档' : `${orbitHover.service.methods.length} 个方法 · 点击查看能力`}</span>
       </div>}
       <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 130px #01040a88',
         background: 'radial-gradient(ellipse at 48% 48%, transparent 20%, #01061033 75%)', zIndex: 1 }} />
