@@ -15,13 +15,8 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     ['nas', '家庭存储阵列', 'Linux · NAS', 'linux', 'waiting'],
     ['cloud', '云端推理集群', 'Linux · A100', 'linux', 'running'],
     ['edge', '边缘设备', 'Linux · ARM64', 'linux', 'unknown'],
-    ['speaker', '智能音箱', 'iOS · HomePod', 'ios', 'unknown'],
-    ['router', '家庭网关', 'Linux · OpenWrt', 'linux', 'running'],
-    ['console', '游戏主机', 'Windows · Xbox', 'windows', 'waiting'],
-    ['camera', '安防摄像头', 'Linux · ARM64', 'linux', 'unknown'],
-    ['car', '车载终端', 'Linux · ARM64', 'linux', 'waiting'],
   ] as const;
-  const nodes: NodeView[] = definitions.map(([id, name, address, platform, agentStatus], index) => ({ id: `demo:node:${id}`, nativeId: `demo-${id}`, name, address, platform, catalogAvailable: true, storage: { totalBytes: [128, 512, 256, 64, 2048, 1024, 1024, 32, 64, 512, 32, 128][index] * GB, observedAt, source: 'demo', status: 'observed' }, networkOnline: index !== 6, online: index !== 6, status: index === 6 ? 'offline' : 'ok', observedAt, serviceIds: [], agentStatus, evidence: evidence(`node-${id}`) }));
+  const nodes: NodeView[] = definitions.map(([id, name, address, platform, agentStatus], index) => ({ id: `demo:node:${id}`, nativeId: `demo-${id}`, name, address, platform, catalogAvailable: true, storage: { totalBytes: [128, 512, 256, 64, 2048, 1024, 1024][index] * GB, observedAt, source: 'demo', status: 'observed' }, networkOnline: index !== 6, online: index !== 6, status: index === 6 ? 'offline' : 'ok', observedAt, serviceIds: [], agentStatus, evidence: evidence(`node-${id}`) }));
   const serviceDefinitions = [
     ['studio', 'orchestrator', '协作编排', 'agent', ['execution.list', 'execution.events'], ['staged-workflow', 'handoff-protocol']],
     ['studio', 'sessions', '会话档案', 'resource_provider', ['sessions.list', 'sessions.read'], ['session-digest']],
@@ -37,11 +32,6 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     ['cloud', 'eval', '评测工坊', 'agent', ['eval.run', 'eval.report'], ['eval-suite']],
     ['edge', 'transcribe', '音频转写', 'generic', ['asr.transcribe', 'asr.info'], ['oralcut', 'speaker-diarize']],
     ['edge', 'media', '媒体处理', 'generic', ['media.inspect', 'media.render'], ['clip-shorts']],
-    ['speaker', 'voice', '语音助手', 'agent', ['voice.listen', 'voice.reply'], ['voice-brief']],
-    ['router', 'network', '网络策略', 'resource_provider', ['route.list', 'route.plan'], ['mesh-routing']],
-    ['console', 'play', '娱乐中枢', 'generic', ['media.play', 'media.queue'], ['family-playlist']],
-    ['camera', 'vision', '视觉感知', 'model_provider', ['vision.detect', 'vision.describe'], ['scene-watch']],
-    ['car', 'nav', '车载导航', 'generic', ['route.plan', 'traffic.read'], ['commute-brief']],
   ] as const;
   const services: ServiceView[] = serviceDefinitions.map(([node, id, name, kind, methods, skills]) => ({ id: `demo:service:${id}`, nativeId: `demo-${id}`, nodeId: `demo:node:${node}`, name, description: `${name}的演示服务契约`, kind, status: node === 'edge' ? 'down' : 'up', observedAt, methods: methods.map(name => ({ name, description: '演示能力，观察端不会执行此方法' })), skills: skills.map(name => ({ id: `demo:skill:${name}`, name, description: '演示工艺指南；目录读取不等于执行', revision: 'demo-v1' })), skillsStatus: 'ok', skillsObservedAt: observedAt, sharing: 'network', evidence: evidence(`service-${id}`) }));
   for (const node of nodes) node.serviceIds = services.filter(service => service.nodeId === node.id).map(service => service.id);
@@ -134,5 +124,5 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     evidence: evidence('voyage-acp-audio', 'ACP 工作单按执行尝试视为航次；起点为授权 origin 的本机网关，终点为最后一次尝试的目标设备'),
   };
   voyages.push(acpVoyage);
-  return { version: 1, mode: 'demo', layoutScope: 'scenario-v3', generatedAt: observedAt, refreshIntervalMs: 180000, nodes, services, jobs, events, projects, voyages, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '7 个业务工作单包含 8 次执行尝试；返工不新增业务工作单。', '每个服务一个能力卫星，每个可见 Skill ID 一个星点；球面蓝绿区域为项目存储比例，灰色为未归属容量，边缘设备未探查。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。', '8 个演示航次：7 个普通会话 + 1 个 ACP 工作单；飞船只沿有证据的 MCP 停靠点飞行，没有停靠的会话停在项目起点。', '远景 12 团星云为演示装饰，每团只画十几个星球，不接入服务、技能或海图数据。'] };
+  return { version: 1, mode: 'demo', layoutScope: 'scenario-v2', generatedAt: observedAt, refreshIntervalMs: 180000, nodes, services, jobs, events, projects, voyages, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '7 个业务工作单包含 8 次执行尝试；返工不新增业务工作单。', '每个服务一个能力卫星，每个可见 Skill ID 一个星点；球面蓝绿区域为项目存储比例，灰色为未归属容量，边缘设备未探查。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。', '8 个演示航次：7 个普通会话 + 1 个 ACP 工作单；飞船只沿有证据的 MCP 停靠点飞行，没有停靠的会话停在项目起点。'] };
 }

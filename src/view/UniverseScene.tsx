@@ -23,7 +23,6 @@ import { advanceOrbitTime, orbitPosition } from './universe-motion';
 import { planetSpin, spinQuaternion } from './spatial-motion';
 import UniverseNavigation, { projectedRadiusPx, UNIVERSE_CAMERA, type UniverseNavigationAction } from './UniverseNavigation';
 import VoyageFleet from './VoyageFleet';
-import DistantNebulae from './DistantNebulae';
 import SceneFrameLoop from './SceneFrameLoop';
 import { ANIMATION_FPS } from './frame-scheduler';
 import { updateEvidenceLine } from './evidence-line';
@@ -40,7 +39,6 @@ export interface UniverseSceneProps extends FactorySceneProps {
   showVoyages?: boolean;
   visibleVoyageIds?: string[];
   presentation?: boolean;
-  distantNebulae?: boolean;
 }
 
 const cyan = '#81e7ed';
@@ -462,7 +460,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
     data-observed-direct-connections={networkCounts.direct} data-observed-relay-connections={networkCounts.derp}
     data-content-model="capability-satellites-skill-stars" data-capability-satellites={visible.reduce((count, node) => count + contentsByNode.get(node.id)!.services.length, 0)}
     data-skill-stars={visible.reduce((count, node) => count + contentsByNode.get(node.id)!.skills.length, 0)}
-    data-distant-nebula-count={props.distantNebulae ? 12 : 0} data-orbit-hover={orbitHover?.type ?? ''}
+    data-orbit-hover={orbitHover?.type ?? ''}
     data-peer-connections={showConnections ? peers.length : 0} data-highlighted-peer-connections={showConnections ? peers.filter(({ from, to }) => selected.has(from) || selected.has(to)).length : 0}
     data-voyage-count={voyages.length} data-voyage-stop-count={voyageStopCount} data-voyage-mcp-calls={voyageMcpCalls}
     data-voyage-session-count={voyages.filter(voyage => voyage.kind === 'session').length} data-voyage-acp-count={voyages.filter(voyage => voyage.kind === 'acp').length}
@@ -494,12 +492,11 @@ export default function UniverseScene(props: UniverseSceneProps) {
         <CanvasHealth onFailure={() => setLostContext(true)} />
         <SceneFrameLoop animate={animate} element={sceneElement} />
         <OrbitClock layout={layout} animate={animate} time={orbitTime} positions={positions} />
-        <UniverseNavigation resetKey={resetKey} action={props.navAction} presentation={props.presentation} distantField={props.distantNebulae} positions={positions} sizes={sizes} ringRadius={layout.radius}
+        <UniverseNavigation resetKey={resetKey} action={props.navAction} presentation={props.presentation} positions={positions} sizes={sizes} ringRadius={layout.radius}
           localSystem={localSystem}
           selectedIds={selected} orbitTime={orbitTime} sceneElement={sceneElement} />
         <UniverseBackdrop animate={animate} />
         <UniverseStars animate={animate} />
-        {props.distantNebulae && <DistantNebulae seed={snapshot.layoutScope ?? 'demo'} ringRadius={layout.radius} animate={animate} />}
         <GalaxyOrbits layout={layout} positions={positions} />
         {showConnections && <><PeerConnections connections={peers} selected={selected} positions={positions} subdued={Boolean(snapshot.network)} />
           <PeerConnectionLayer connections={networkPaths.direct} positions={positions} opacity={0.7} color="#77dce9" />
