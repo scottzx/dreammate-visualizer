@@ -33,13 +33,14 @@ interface UniverseNavigationProps {
   sizes: Map<string, number>;
   ringRadius: number;
   localSystem?: GalaxySystemLayout;
+  presentation?: boolean;
   selectedIds: Set<string>;
   orbitTime: RefObject<number>;
   sceneElement: RefObject<HTMLDivElement | null>;
 }
 
 /** Full spherical navigation, separate from the illustrative physical orbit clock. */
-export default function UniverseNavigation({ resetKey, action, positions, sizes, ringRadius, localSystem, selectedIds, orbitTime, sceneElement }: UniverseNavigationProps) {
+export default function UniverseNavigation({ resetKey, action, positions, sizes, ringRadius, localSystem, presentation, selectedIds, orbitTime, sceneElement }: UniverseNavigationProps) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<OrbitControlsImpl>(null);
   const following = useRef<string | null>(null);
@@ -51,7 +52,7 @@ export default function UniverseNavigation({ resetKey, action, positions, sizes,
   const selected = useRef(selectedIds);
   selected.current = selectedIds;
   const maxPlanetRadius = Math.max(1.05, ...sizes.values());
-  const fitDistance = universeOverviewDistance(ringRadius, maxPlanetRadius, size.width / size.height);
+  const fitDistance = universeOverviewDistance(ringRadius, maxPlanetRadius, size.width / size.height, presentation ? 1.02 : 1.3);
   const maxDistance = Math.max(UNIVERSE_CAMERA.maxDistance, fitDistance * 3);
 
   function overview() {

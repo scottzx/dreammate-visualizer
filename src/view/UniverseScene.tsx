@@ -38,6 +38,7 @@ export interface UniverseSceneProps extends FactorySceneProps {
   navAction?: UniverseNavigationAction;
   showVoyages?: boolean;
   visibleVoyageIds?: string[];
+  presentation?: boolean;
 }
 
 const cyan = '#81e7ed';
@@ -491,7 +492,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
         <CanvasHealth onFailure={() => setLostContext(true)} />
         <SceneFrameLoop animate={animate} element={sceneElement} />
         <OrbitClock layout={layout} animate={animate} time={orbitTime} positions={positions} />
-        <UniverseNavigation resetKey={resetKey} action={props.navAction} positions={positions} sizes={sizes} ringRadius={layout.radius}
+        <UniverseNavigation resetKey={resetKey} action={props.navAction} presentation={props.presentation} positions={positions} sizes={sizes} ringRadius={layout.radius}
           localSystem={localSystem}
           selectedIds={selected} orbitTime={orbitTime} sceneElement={sceneElement} />
         <UniverseBackdrop animate={animate} />

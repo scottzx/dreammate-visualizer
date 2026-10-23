@@ -55,14 +55,21 @@ npm start
 
 桌面宽度 ≥1100 时工作台默认展开观察台；更窄或手机默认收起，保留完整的 16:9 沙盘。两种模式共用同一套面板与数据，不复制状态。
 
-## GitHub Pages 落地页与交互演示
+## GitHub Pages 落地页、技术说明与交互演示
 
 落地页直接发布 `main` 分支的 `docs/`（`docs/.nojekyll` 关闭 Jekyll 处理）：
 
-- **https://scottzx.github.io/dreammate-visualizer/**：一页宣传页
+- **https://scottzx.github.io/dreammate-visualizer/**：一页宣传页，含技术构建摘要与仓库导航
+- **https://scottzx.github.io/dreammate-visualizer/network/**：技术设计说明，覆盖分层、一次调用、实体关系与进度边界
 - **https://scottzx.github.io/dreammate-visualizer/demo/**：可交互的能力宇宙演示
 
+首页按「一句话是什么 → 三个词 → 技术构建 → 交互演示 → 仓库地图」组织，技术说明子页是公开摘要，不发布设计册全文。
+
+设计册原文在私有仓 `scottzx/dreammate_world_plan`。公开站不链接该私有仓，也不复制其中的内网地址、内部路径、版本与业务系统细节；技术说明只保留可公开的结构与证据边界。设计变更时先改私有仓，再同步这页摘要。
+
 演示页是独立于观察后端的纯静态构建。`npm run build:demo` 设置 `VITE_STANDALONE_DEMO=1`，以相对路径把页面、`assets/` 与 `models/` 输出到 `docs/demo/`。它不请求 `/api`：设备、项目、会话与航次由浏览器端按隔离演示场景生成，并保持 3 分钟一次的航次周期；Skill 文档同样在本地构造并标记为演示。该构建只提供演示模式，不包含真实来源切换。
+
+演示场景包含 **7 台设备、14 个服务、20 个 Skill 星点、8 个航次**（7 个普通会话 + 1 个 ACP），以及对应的 7 个工作单、10 条事件和 5 个项目；新增家庭存储阵列（2.05 TB）与云端推理集群两颗星球，让星环、星点和飞船的层次更满。
 
 落地页的 `#demo` 区域用 iframe 懒加载 `demo/?display=1`（展示模式），窄屏改为静态海报 `docs/assets/demo-poster.jpg` 并链接到独立页面。修改演示界面后重新生成并一起提交：
 

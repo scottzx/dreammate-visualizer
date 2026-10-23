@@ -25,9 +25,9 @@ function CapabilitySatellite({ service, angle, selected, gestureMoved, onSelect,
   return <group position={[Math.cos(angle) * 1.72, .045, Math.sin(angle) * 1.72]} rotation={[0, -angle, 0]}
     onPointerOver={hover} onPointerMove={hover} onPointerOut={() => { setHovered(false); onHover(null); }}
     onClick={event => { event.stopPropagation(); if (event.delta <= 6 && !gestureMoved.current) onSelect({ type: 'service', id: service.id }); }}>
-    <mesh><octahedronGeometry args={[.072, 0]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={illuminated ? selected || hovered ? 1.1 : .5 : 0} metalness={.5} roughness={.3} /></mesh>
+    <mesh><octahedronGeometry args={[.084, 0]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={illuminated ? selected || hovered ? 1.1 : .5 : 0} metalness={.5} roughness={.3} /></mesh>
     {[-1, 1].map(side => <mesh key={side} position={[0, 0, side * .105]}>
-      <boxGeometry args={[.09, .014, .12]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={illuminated ? .22 : 0} metalness={.65} roughness={.35} />
+      <boxGeometry args={[.1, .016, .14]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={illuminated ? .22 : 0} metalness={.65} roughness={.35} />
     </mesh>)}
     <mesh><sphereGeometry args={[.17, 8, 6]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>
   </group>;
@@ -87,11 +87,11 @@ export function CapabilityOrbit({ contents, radius, seed, time, selectedServiceI
           if (skill && event.delta <= 6 && !gestureMoved.current) onSelect({ type: 'skill', id: skill.id, serviceId: skill.serviceId });
         }}>
         <bufferGeometry key={points.length}><bufferAttribute attach="attributes-position" args={[points, 3]} /><bufferAttribute attach="attributes-color" args={[colors, 3]} /></bufferGeometry>
-        <pointsMaterial vertexColors size={radius * .026} transparent opacity={illuminated ? .96 : .2} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <pointsMaterial vertexColors size={radius * .038} transparent opacity={illuminated ? .96 : .2} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
       </points>}
       {highlighted.length > 0 && <points raycast={() => {}}>
         <bufferGeometry><bufferAttribute attach="attributes-position" args={[highlighted, 3]} /></bufferGeometry>
-        <pointsMaterial color="#fff2cf" size={radius * .07} transparent opacity={.96} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <pointsMaterial color="#fff2cf" size={radius * .095} transparent opacity={.96} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
       </points>}
       {contents.services.map((service, index) => <CapabilitySatellite key={service.id} service={service} angle={index / contents.services.length * TAU}
         selected={selectedServiceId === service.id} gestureMoved={gestureMoved} onSelect={onSelect} onHover={onHover} illuminated={illuminated} />)}
