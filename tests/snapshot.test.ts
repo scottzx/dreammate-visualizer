@@ -2,6 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDemoSnapshot } from '../src/observer/demo';
 import { snapshotFacts } from '../src/read-model/presentation';
+import { createObserver } from '../src/observer/index';
+import { parseConfig } from '../src/observer/config';
+
+test('devices retained after failed discovery lose cached network presence', async t => {
+  let disconnected = false;
+  t.mock.method(globalThis, 'fetch', async (input: string) => {
+    const url = new URL(input);
+    if (url.pathname === '/nodes') return disconnected
+      ? new Response('{}', { status: 503 })
+      : Response.json({ nodes: [{ node_id: 'peer', name: 'Peer', ipv4: 'peer.test', network_online: true }] });
+    const node_id = url.hostname === 'seed.test' ? 'seed' : 'peer';
+    return Response.json(url.pathname === '/health' ? { node_id } : { node_id, name: node_id, services: [] });
+  });
+  const observer = createObserver(parseConfig({ nodeUrls: ['http://seed.test:36908'] }, {}));
+  const first = await observer.snapshot('live', true);
+  assert.equal(first.nodes.find(node => node.nativeId === 'peer')?.networkOnline, true);
+  disconnected = true;
+  const second = await observer.snapshot('live', true);
+  const retained = second.nodes.find(node => node.nativeId === 'peer');
+  assert.ok(retained, 'the device remains selectable');
+  assert.equal(retained.status, 'stale');
+  assert.equal(retained.networkOnline, null);
+  assert.equal(retained.online, null);
+});
 
 test('demonstration snapshot is isolated and entity references resolve', () => {
   const snapshot = createDemoSnapshot(new Date('2026-10-22T09:00:00Z'));

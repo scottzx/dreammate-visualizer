@@ -50,7 +50,7 @@ ACP 实际设备、会话、轮次关系只采纳显式字段，缺失时显示�
 
 ## 进程与 API
 
-`OBSERVER_CONFIG` 指定配置路径，`DREAMMATE_NODE_URL` 覆盖 Node 种子。`OBSERVER_PORT` 修改后端端口，`listenHosts` 默认 `["127.0.0.1"]`，本机持久配置额外包含 `100.64.0.2`；`OBSERVER_HOST` 可覆盖为单个地址。开发时 Vite 代理固定到 4318，如修改后端端口需同时调整 `vite.config.ts`；生产静态服务使用自己的实际监听地址。
+`OBSERVER_CONFIG` 指定配置路径，`DREAMMATE_NODE_URL` 覆盖 Node 种子。`OBSERVER_PORT` 修改后端端口，`listenHosts` 默认 `["127.0.0.1"]`，本机持久配置额外包含 `<观察机 Tailscale 地址>`；`OBSERVER_HOST` 可覆盖为单个地址。开发时 Vite 代理固定到 4318，如修改后端端口需同时调整 `vite.config.ts`；生产静态服务使用自己的实际监听地址。
 
 `GET /api/snapshot?mode=live&refresh=1` 请求重新观察；并发刷新复用进行中的采集。`mode=demo` 是完全隔离的构造快照，不能向真实来源写数据。观察服务不提供修改来源、调度或控制执行的 HTTP 接口。
 
@@ -74,6 +74,13 @@ Node manifest 可上报：
 配置 `localNodeId` 可显式绑定观察进程所在设备的原生 Node ID。本机 macOS 通过 `diskutil list -plist internal physical` 只读采集内置物理磁盘，使用系统 `plutil` 解码，最多等待 3 秒；多块内置物理磁盘求和，同一磁盘按身份去重，不计外接盘，不重复加 APFS 分区、容器或卷。Mac 本轮实测总容量为 500277792768 字节（约 500.3GB）。未绑定的远端设备不会套用观察机磁盘容量。其他平台的观察机目前使用 Node 上报值或默认值，本机自动磁盘采集限 macOS。
 
 显示采用存储设备常用十进制单位：1 GB = 10⁹ 字节、1 TB = 10¹² 字节。统一半径为 `1.8 × cbrt(totalBytes / (64 × 10⁹))`，因此 64G、128G、256G、512G 的体积为 1∶2∶4∶8。缺失或无效容量在显示侧统一默认 128GB，标注“默认”；API 的真实容量仍保持未知，采集到有效值后自动替换。不会按服务数、中心身份或当前列表的最大值改变比例。演示容量为隔离示例。
+
+## 本机项目存储目录
+
+通过 `localNodeId` 绑定本机设备后，可配置 `localProjects: [{id, name, path, category}]`；`path` 必须是明确的项目绝对目录，`category` 为 `business-agent`、`perception` 或 `other`。配置示例、读取边界与图形语义见 [能力星环与项目存储](capability-rings-v7.md)。
+
+快照 `projects[].storage[]` 包含 `nodeId/category/bytes/status/observedAt/source/metric/path`。当前 `source` 为 `observer-directory`，`metric` 固定为 `allocated-disk-bytes`；失败时 `bytes: null`，不记作0。不将会话数、Skill 数、RAM、默认128G或其他设备目录当作存储占比。`sources` 新增 `kind: projects`，覆盖状态只表示配置目录采集情况，不能表示全设备项目已完整枚举。
+
 
 ## 基础设备信息
 

@@ -73,7 +73,7 @@ export class NodeAdapter {
       const diagnostics = [error.message, ...(conflict ? ['当前来源身份与缓存节点不一致，未沿用旧设备存储及能力目录'] : [])];
       if (cached && !conflict) {
         const stale = Date.parse(now) - Date.parse(cached.node.observedAt ?? '') > this.config.staleAfterMs;
-        return { node: { ...cached.node, storage: cachedStorage(cached.node.storage),
+        return { node: { ...cached.node, storage: cachedStorage(cached.node.storage), networkOnline: target.networkOnline ?? null,
           device: cached.node.device && { ...cached.node.device, status: 'cached' },
           online: healthId === cached.node.nativeId ? true : null, status: stale ? 'stale' : 'partial' },
           services: cached.services.map(service => ({ ...service, status: 'unknown', skillsStatus: 'stale' })),

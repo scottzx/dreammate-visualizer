@@ -2,14 +2,19 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { isIP } from 'node:net';
 import { array, object, string } from '../adapters/http';
+import type { ProjectCategory } from '../read-model/types';
 
 export interface AcpSourceConfig {
   id: string; name?: string; originSessionId: string; url?: string; nodeUrl?: string; serviceId?: string; jobId?: string;
 }
+export interface LocalProjectConfig { id: string; name: string; path: string; category: ProjectCategory }
+export interface TailscaleConfig { binary: string; centralRelayRegion?: string; centralRelayNodeId?: string }
 export interface ObserverConfig {
   listenHosts: string[];
   nodeUrls: string[]; timeoutMs: number; refreshIntervalMs: number; staleAfterMs: number;
   localNodeId?: string;
+  localProjects: LocalProjectConfig[];
+  tailscale?: TailscaleConfig;
   maxNodes: number; maxPages: number; acpSources: AcpSourceConfig[]; diagnostics: string[];
 }
 const bounded = (value: unknown, fallback: number, min: number, max: number) => typeof value === 'number' && Number.isInteger(value) ? Math.max(min, Math.min(max, value)) : fallback;
@@ -41,7 +46,21 @@ export function parseConfig(value: unknown, env: NodeJS.ProcessEnv = process.env
   });
   const unique = new Set<string>();
   for (const source of acpSources) { if (unique.has(source.id)) throw new Error(`ACP 配置 id 重复：${source.id}`); unique.add(source.id); }
-  return { localNodeId: string(input.localNodeId).trim() || undefined, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 10000, 3000, 120000), staleAfterMs: bounded(input.staleAfterMs, 45000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
+  const localProjects = array(input.localProjects).slice(0, 24).flatMap((value, index): LocalProjectConfig[] => {
+    const project = object(value), id = string(project.id).trim(), directory = string(project.path).trim();
+    if (!id || !path.isAbsolute(directory) || path.resolve(directory) === path.parse(directory).root) {
+      diagnostics.push(`本机项目 ${index + 1} 缺少 id 或明确的项目绝对目录，未扫描`); return [];
+    }
+    if (unique.has(`project:${id}`)) throw new Error(`本机项目配置 id 重复：${id}`);
+    unique.add(`project:${id}`);
+    const category = project.category === 'business-agent' || project.category === 'perception' ? project.category : 'other';
+    return [{ id, name: string(project.name, id), path: path.resolve(directory), category }];
+  });
+  if (localProjects.length && !string(input.localNodeId).trim()) diagnostics.push('本机项目未绑定 localNodeId，不读取目录大小');
+  const network = object(input.tailscale);
+  const tailscale = input.tailscale ? { binary: string(network.binary, 'tailscale'), centralRelayRegion: string(network.centralRelayRegion) || undefined,
+    centralRelayNodeId: string(network.centralRelayNodeId) || undefined } : undefined;
+  return { localNodeId: string(input.localNodeId).trim() || undefined, localProjects, tailscale, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 10000, 3000, 120000), staleAfterMs: bounded(input.staleAfterMs, 45000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
 }
 
 export async function loadConfig(): Promise<ObserverConfig> {

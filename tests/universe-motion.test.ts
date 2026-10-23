@@ -19,6 +19,17 @@ test('planetary revolution preserves distance in a tilted 3D orbital plane', () 
   assert.ok(highPoint[1] > ORBIT_CENTER_Y + 1);
 });
 
+test('the DERP hub stays fixed while the equal-spaced device ring revolves around it', () => {
+  const layout = createUniverseLayout(['relay', 'mac', 'phone', 'pc'], [], 'relay');
+  for (const time of [0, 10, 100, 1e12]) assert.deepEqual(orbitPosition(layout.plots.get('relay')!, time), [0, ORBIT_CENTER_Y, 0]);
+  for (const id of ['mac', 'phone', 'pc']) {
+    const plot = layout.plots.get(id)!;
+    assert.notDeepEqual(orbitPosition(plot, 0), orbitPosition(plot, 10));
+    const [x, y, z] = orbitPosition(plot, 10);
+    near(Math.hypot(x, y - ORBIT_CENTER_Y, z), layout.radius);
+  }
+});
+
 test('all devices including the former Mac centre revolve clockwise at the same angular speed', () => {
   const layout = createUniverseLayout(['mac', 'second', 'third', 'device']);
   const elapsed = 60;

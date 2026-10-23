@@ -24,7 +24,7 @@ export function summarizeNode(snapshot: ObserverSnapshot, nodeId: string): NodeS
     services: catalogKnown ? services.length : null,
     methods: catalogKnown ? services.reduce((sum, service) => sum + service.methods.length, 0) : null,
     skills: catalogKnown && hasSkillObservation ? services.reduce((sum, service) => sum + service.skills.length, 0) : null,
-    projects: snapshot.projects === undefined ? null : new Set(snapshot.projects.filter(project => project.nodeIds.includes(nodeId)).map(project => project.id)).size,
+    projects: snapshot.projects === undefined || (snapshot.mode === 'live' && !snapshot.projects.some(project => project.nodeIds.includes(nodeId))) ? null : new Set(snapshot.projects.filter(project => project.nodeIds.includes(nodeId)).map(project => project.id)).size,
     agentRuntimes: catalogKnown ? services.filter(service => ['agent_runtime', 'agent'].includes(service.kind)).length : null,
     catalogKnown,
     partial: Boolean(node && node.status !== 'ok') || services.some(service => service.skillsStatus !== undefined && service.skillsStatus !== 'ok'),
@@ -41,8 +41,8 @@ export function buildBaseLots(snapshot: ObserverSnapshot, nodeId: string): BaseL
   }));
   if (summary.agentRuntimes !== null && summary.agentRuntimes > 0) lots.unshift({ id: `lot:agents:${nodeId}`, type: 'agents', name: '智能体驻地', nodeId, grade: summary.agentRuntimes >= 3 ? 3 : 2, count: summary.agentRuntimes, status: 'declared' });
   lots.push({ id: `lot:academy:${nodeId}`, type: 'academy', name: '技能学院', nodeId, grade: summary.skills !== null && summary.skills >= 100 ? 3 : summary.skills !== null && summary.skills >= 10 ? 2 : 1, count: summary.skills, status: summary.partial ? 'partial' : summary.skills === null ? 'unknown' : 'ok' });
-  if (snapshot.projects === undefined) lots.push({ id: `lot:projects:unconnected:${nodeId}`, type: 'project', name: '项目目录待接入', nodeId, grade: 1, count: null, status: 'unknown', placeholder: true });
-  else for (const project of snapshot.projects.filter(project => project.nodeIds.includes(nodeId)).sort((a, b) => a.id.localeCompare(b.id))) lots.push({ id: `lot:${project.id}`, type: 'project', name: project.name, nodeId, projectId: project.id, grade: projectGrade(project.sessionCount), count: project.sessionCount, status: project.status });
+  if (summary.projects === null) lots.push({ id: `lot:projects:unconnected:${nodeId}`, type: 'project', name: '项目目录待接入', nodeId, grade: 1, count: null, status: 'unknown', placeholder: true });
+  else for (const project of (snapshot.projects ?? []).filter(project => project.nodeIds.includes(nodeId)).sort((a, b) => a.id.localeCompare(b.id))) lots.push({ id: `lot:${project.id}`, type: 'project', name: project.name, nodeId, projectId: project.id, grade: projectGrade(project.sessionCount), count: project.sessionCount, status: project.status });
   return lots;
 }
 

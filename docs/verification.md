@@ -46,7 +46,7 @@
 
 ## 后续更新：Tailscale 访问
 
-已增加配置化多地址监听，共享一个观察实例和采样计时器。本机实际配置绑定 `127.0.0.1:4318` 与 `100.64.0.2:4318`。页面和 API 同端口；任一地址绑定失败会释放先前的 listener，退出时同时关闭全部 listener。
+已增加配置化多地址监听，共享一个观察实例和采样计时器。本机实际配置绑定 `127.0.0.1:4318` 与 `scott-mac.tailfb4720.ts.net:4318`。页面和 API 同端口；任一地址绑定失败会释放先前的 listener，退出时同时关闭全部 listener。
 
 本轮 `npm test` 28 项通过，新增监听配置/覆盖规则、双地址同端口、绑定失败回滚检查；类型检查和生产构建通过。已在本机核验两个地址的静态页面、health 和 demo snapshot 返回 200，并通过 lsof 核对监听范围。远端设备的实际访问仍取决于其 Tailnet 连接与现有访问规则；本记录不冒称已在另一台设备上验证。
 
@@ -56,7 +56,7 @@
 
 已新增 `scripts/service.mjs` 和 service:install/status/uninstall 命令，并实际安装 `~/Library/LaunchAgents/com.1agents.dreammate-visualizer.plist`。用户级 launchd 启用 RunAtLoad/KeepAlive，使用独立日志和绝对工作目录。plist 校验、脚本语法检查通过；真实运行状态为 running，双地址监听正常。
 
-跨设备验证（17:43:37 CST）：从 `scott-pc-wsl` / `100.75.225.56` 经 `tailscale0` 到 `100.64.0.2:4318`，首页、`/api/health`、生产 JS 和 CSS 均为 HTTP 200，curl 退出码均为 0。
+跨设备验证（17:43:37 CST）：从 `scott-pc-wsl` / `100.75.225.56` 经 `tailscale0` 到 `scott-mac.tailfb4720.ts.net:4318`，首页、`/api/health`、生产 JS 和 CSS 均为 HTTP 200，curl 退出码均为 0。
 
 自动恢复验证：向本项目已核验 PID 发送 SIGTERM，launchd 自动创建了不同 PID，loopback 与 Tailnet IP 的 health 均恢复 200。该验证使用真实服务进程，不依赖任务终端持续存在。
 
@@ -74,7 +74,7 @@
 - 图鉴有独立全高滚动容器，避免驾驶舱body overflow影响低屏幕浏览。
 - 独立复查修复：目录变化时旧投影标签引用、已移除建筑选择、基地相机裁切、短横屏 HUD 内容为零及图鉴滚动问题。最终基地/竖屏/短横屏截图独立复审通过。
 - 用户级服务重新安装成功并返回health200；安装流程增加bootout异步释放后的有界bootstrap重试。
-- 20:49:25 CST，另一设备scott-pc-wsl（100.75.225.56）经Tailscale到100.64.0.2:4318，首页/图鉴/health均200。planet-hub.glb与workshop-advanced.glb均200、Content-Type为model/gltf-binary、GLB版本2，声明长度与下载长度一致。
+- 20:49:25 CST，另一设备scott-pc-wsl（100.75.225.56）经Tailscale到scott-mac.tailfb4720.ts.net:4318，首页/图鉴/health均200。planet-hub.glb与workshop-advanced.glb均200、Content-Type为model/gltf-binary、GLB版本2，声明长度与下载长度一致。
 - 暂停巡航后切换竖屏、短横屏、恢复1280×720的渲染问题已修复：相机同步更新，绘制持续保持画布与标签一致，暂停仅停止舰群运动。最终浏览器确认13个标签均可见，仍处于暂停状态。
 - 图鉴实际滚动至scrollTop233.5，10件素材均可访问。
 - 浏览器本轮无error日志；Three.js上游Clock弃用warning仍存在。
@@ -131,3 +131,21 @@
 56 项全量测试、TypeScript、生产构建通过。测试含旧 RAM 字段隔离、存储单位和缓存回归、APFS/物理盘去重。本轮页面证据在 `artifacts/storage-v6/`，详见 [设备存储与球体比例](storage-sizing-v6.md)。
 
 本次独立复核通过的范围为 `distributed-ring-v5-final` 清单及其构建/运行证据。复核后，共享工作区另有容量指标从内存改为存储的后续工作；这些修改保留，未纳入本次55项测试和独立复核结论。当前版本边界见 `artifacts/distributed-ring-v5/version-scope.json`。
+
+## 能力星环与项目存储 v7（2026-10-23）
+
+用户已确认一个 Skill 包一个星点，项目按存储空间统计。粗星环绘制全部可见服务卫星，点击可查看对应方法；Skill 星点按节点内目录 ID 去重，部分覆盖有明确标注。移除旧装饰粒子数量与抽样舰群，球面使用项目已测字节除以真实设备存储的面积分区，默认128G不参与项目占比，未知保留灰色。
+
+本机已接入 1ACP 智能体协作与端侧语音感知两个显式目录，只读统计已分配存储，每60秒更新；其他设备尚无项目存储来源，不推定为0。实测目录约1.8GB，占设备约0.36%，具体数值随目录变化及采集时间更新。该读数不证明项目正在执行。
+
+本次验证：`npm test` 71项通过，`npm run build` 通过。浏览器实况点击能力卫星后成功打开 deckcraft 方法列表；验证按 Skill ID 去重、项目实测占比与部分目录标记。隔离演示验证蓝/绿/其他项目球面分区，以及边缘设备未探查时比例未知、保留灰色。最终浏览器无 error 日志。截图为运行自检，未调用独立评审。
+
+记录目录：`artifacts/capability-rings-v7/`。`live-project-storage.png` 为实况星环与项目占比，`demo-project-colors.png` 为带演示标识的分类色块，`unknown-gray.png` 为未探查状态；`browser-metrics.json` 保存运行时目录计数、容量比例与页面脚本标识，测试和构建输出保存为 `tests.log`、`build.log`。同工作区正在接入的网络拓扑与在线状态更新一并保留，本轮未以项目存储推断网络状态。
+
+### 星环细化（2026-10-23）
+
+按用户反馈移除宽环带与四条亮边，改为卫星轨道上的单条细线，并降低透明度。能力卫星、Skill 星点与项目存储逻辑保持原有语义。构建通过，浏览器实况近景已检查；截图保存为 `artifacts/capability-rings-v7/thin-ring/preview.png`。这是样式调整的运行自检，未新增数据测试。
+
+## 立体轨道与 IP 隐私 v10
+
+91 项测试及生产构建通过。实况页面有 6 个独立大轨道平面、6 个独立小轨道平面、13 个自转轴；恢复后 12 台外圈设备均有纵向位移，DERP 中心保持固定。暂停时坐标与共享时钟不变，服务太阳系跟随正常，浏览器 error 为 0。真实与演示接口均已隐藏 IP，场景 DOM 属性及来源抽屉扫描为 0 个 IP 字面量。详见 [立体轨道](spatial-orbits-v10.md) 与 [IP 隐私](ip-privacy-v9.md)，截图、页面读数和构建副本在本地忽略目录 artifacts/spatial-orbits-v10/。为实际页面自检，不宣称独立评审。

@@ -12,6 +12,8 @@ import AssetModel from '../visual-assets/AssetModel';
 
 React 组件通过 `useGLTF` 缓存源资产，每个实例克隆节点树，复用只读几何和材质。场景实例各有自己的位置与旋转。修改某个实例的材质时，需要先单独 clone 材质，避免影响其他实例。
 
+`illuminated={false}` 会为当前实例克隆材质，关闭自发光并调暗表面；状态恢复时还原原有亮度，其他星球不受影响。设备场景优先按 `networkOnline` 点亮，缺少网络状态时使用有效的网关探活结果；离线与未知设备保留可选择的暗色轮廓，光晕、卫星和远景光点同步调暗。
+
 ```ts
 import { createUniverseModel, UNIVERSE_MODEL_IDS } from './models';
 const editableSource = createUniverseModel('ship-base');

@@ -1,0 +1,9 @@
+.universe-planet-label [data-label-path] { display: block; margin-top: 5px; font-size: 9px; color: #7b9aa9; }
+.universe-planet-label[data-network-path="derp"] [data-label-path] { color: #e1b777; }
+.universe-planet-label[data-network-path="direct"] [data-label-path] { color: #83cbd6; }
+.universe-planet-label[data-relay-center="true"] { width: 188px; }
+.universe-planet-label[data-relay-center="true"] [data-label-button] { border-color: #b68a4c88 !important; border-left-color: #efbd70 !important; background: linear-gradient(110deg,#302719ed,#0e1823ed) !important; }
+.universe-planet-label[data-relay-center="true"] strong { color: #f4ce92; }
+.universe-planet-label [data-label-relay] { display: block; margin-top: 6px; font-size: 9px; line-height: 1.6; color: #c2ac8c; }
+.universe-planet-label[data-label-lod="compact"] [data-label-path],
+.universe-planet-label[data-label-lod="compact"] [data-label-relay] { display: none; }

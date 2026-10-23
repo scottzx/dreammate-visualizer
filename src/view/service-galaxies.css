@@ -1,0 +1,5 @@
+.universe-planet-label[data-service-center="true"] { width: 190px; }
+.universe-planet-label[data-service-center="true"] [data-label-button] { border-left-color: #80e8f2 !important; border-color: #518f9b88 !important; }
+.universe-planet-label[data-service-center="true"] strong { color: #a1edf2; white-space: normal !important; overflow-wrap: anywhere; line-height: 1.45; }
+.universe-planet-label [data-label-service] { display: block; margin-top: 6px; color: #8dc6d1; font-size: 9px; line-height: 1.65; }
+.universe-planet-label[data-label-lod="compact"] [data-label-service] { display: none; }

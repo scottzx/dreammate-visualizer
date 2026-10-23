@@ -4,19 +4,17 @@
 .universe-planet-label [data-label-detail] { display: block; color: #8ba2b5; margin-top: 5px; font-size: 9px; letter-spacing: .03em; }
 .universe-planet-label [data-label-storage] { display: block; margin-top: 6px; font-size: 10px; color: #c7e2e8; }
 .universe-planet-label [data-label-storage][data-storage-known="false"] { font-size: 9px; color: #8595a5; }
+.universe-planet-label [data-label-contents] { display: block; margin-top: 5px; font-size: 9px; color: #e5cda5; }
 .universe-planet-label [data-label-leader] { height: 17px; width: 1px; margin: 0 auto; }
 .universe-planet-label[data-label-lod="compact"] { width: max-content; max-width: 130px; }
 .universe-planet-label[data-label-lod="compact"] [data-label-button] { padding: 3px 6px !important; background: #071522d9 !important; }
 .universe-planet-label[data-label-lod="compact"] [data-label-button] strong { font-size: 9px !important; max-width: 105px; }
 .universe-planet-label[data-label-lod="compact"] [data-label-detail],
 .universe-planet-label[data-label-lod="compact"] [data-label-storage],
+.universe-planet-label[data-label-lod="compact"] [data-label-contents],
 .universe-planet-label[data-label-lod="compact"] [data-label-core],
 .universe-planet-label[data-label-lod="compact"] [data-label-entry] { display: none !important; }
 .universe-planet-label[data-label-lod="compact"] [data-label-leader] { height: 8px; }
-.universe-navigation-hint { position: absolute; right: 18px; top: 12px; color: #789aaf; font-size: 9px; letter-spacing: .04em; pointer-events: none; z-index: 3; }
-.universe-storage-key { position: absolute; left: 24px; bottom: 83px; z-index: 3; pointer-events: none; color: #91a8b8; font-size: 9px; letter-spacing: .06em; }
-.universe-storage-key > div { display: flex; align-items: end; gap: 16px; margin-top: 9px; }
-.universe-storage-key > div > span { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.universe-storage-key i { display: block; border: 1px solid #cdbb94a6; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f7d89a29, #151a2300 70%); }
-.universe-storage-key small { font-size: 8px; }
-@media (max-width: 650px) { .universe-navigation-hint { display: none; } }
+.universe-satellite-tooltip { position: absolute; z-index: 6; pointer-events: none; width: max-content; max-width: 205px; padding: 8px 11px; background: #081a2aef; border: 1px solid #8bcbdf77; color: #e1f6ff; font-size: 11px; }
+.universe-satellite-tooltip strong, .universe-satellite-tooltip span { display: block; }
+.universe-satellite-tooltip span { margin-top: 4px; color: #9bb5c6; font-size: 10px; }

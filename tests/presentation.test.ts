@@ -1,9 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { snapshotFacts, coverageLabels, workStatusLabels } from '../src/read-model/presentation';
+import { snapshotFacts, coverageLabels, workStatusLabels, nodeIsNetworkOnline } from '../src/read-model/presentation';
 import type { ObserverSnapshot } from '../src/read-model/types';
 
 const empty: ObserverSnapshot = { version: 1, mode: 'live', generatedAt: '2026-10-22T09:00:00.000Z', refreshIntervalMs: 15000, nodes: [], services: [], jobs: [], events: [], sources: [], limitations: [] };
+
+test('planet lighting follows network presence even when the gateway is unavailable', () => {
+  assert.equal(nodeIsNetworkOnline({ networkOnline: true, online: null, status: 'unavailable' }), true);
+  assert.equal(nodeIsNetworkOnline({ networkOnline: false, online: null, status: 'offline' }), false);
+  assert.equal(nodeIsNetworkOnline({ networkOnline: false, online: true, status: 'partial' }), false);
+  assert.equal(nodeIsNetworkOnline({ networkOnline: true, online: null, status: 'stale' }), true);
+  assert.equal(nodeIsNetworkOnline({ online: true, status: 'ok' }), true);
+  assert.equal(nodeIsNetworkOnline({ networkOnline: null, online: true, status: 'partial' }), true);
+  assert.equal(nodeIsNetworkOnline({ online: true, status: 'stale' }), false);
+  assert.equal(nodeIsNetworkOnline({ online: null, status: 'unknown' }), false);
+});
 
 test('unconnected snapshot does not invent zero-valued global interaction totals', () => {
   const facts = snapshotFacts(empty);

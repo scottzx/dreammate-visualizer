@@ -47,6 +47,28 @@ test('malformed persisted orbit data is repaired without duplicate slots', () =>
   assert.equal(new Set([...layout.plots.values()].map((plot) => plot.slot)).size, 3);
 });
 
+test('only the confirmed relay occupies the centre; radius depends on the other devices', () => {
+  const ids = ['mac', 'relay', ...Array.from({ length: 11 }, (_, i) => `device:${i}`)];
+  const original = createUniverseLayout(ids);
+  const layout = createUniverseLayout(ids, original.assignments, 'relay');
+  assert.equal(layout.plots.size, 13);
+  assert.equal(layout.radius, universeRingRadius(12));
+  assert.deepEqual(layout.plots.get('relay'), { id: 'relay', slot: original.plots.get('relay')!.slot,
+    x: 0, y: 0.3, z: 0, orbitRadius: 0, role: 'relay-center' });
+  const orbit = [...layout.plots.values()].filter(plot => plot.role !== 'relay-center');
+  for (let index = 0; index < orbit.length; index++) {
+    const a = orbit[index], b = orbit[(index + 1) % orbit.length];
+    const angle = (Math.atan2(b.z, b.x) - Math.atan2(a.z, a.x) + Math.PI * 2) % (Math.PI * 2);
+    assert.ok(Math.abs(angle * layout.radius - UNIVERSE_NEIGHBOR_ARC_LENGTH) < 1e-9);
+  }
+  const larger = createUniverseLayout([...ids, 'new'], layout.assignments, 'relay');
+  assert.equal(larger.radius, universeRingRadius(13));
+  assert.deepEqual(larger.plots.get('relay'), layout.plots.get('relay'));
+  assert.deepEqual(createUniverseLayout(ids, [], 'missing'), createUniverseLayout(ids));
+  assert.equal(createUniverseLayout(['relay'], [], 'relay').radius, 0);
+  assert.deepEqual(createUniverseLayout(['relay'], [], 'relay').rings, []);
+});
+
 test('peer topology connects every unique visible pair exactly once without inventing events', () => {
   for (const count of [0, 1, 2, 13, 100]) {
     const ids = Array.from({ length: count }, (_, i) => `node:${i}`);
@@ -102,4 +124,13 @@ test('dense device labels avoid the centre planet and each other, without depend
     assert.equal(rects.some((other) => rect.left < other.right && rect.right > other.left && rect.top < other.bottom && rect.bottom > other.top), false);
     rects.push(rect);
   }
+});
+
+test('device labels reserve the visible network legend instead of covering its path colors', () => {
+  const reserved = { left: 860, right: 1100, top: 410, bottom: 600 };
+  const anchor = { id: 'device', x: 960, y: 500, width: 155, height: 70, priority: 2 };
+  const label = placeUniverseLabels([anchor], [], 1280, 720, [reserved]).get('device')!;
+  assert.equal(label.visible, true);
+  assert.equal(label.x - 155 / 2 < reserved.right && label.x + 155 / 2 > reserved.left
+    && label.y - 70 < reserved.bottom && label.y - 17 > reserved.top, false);
 });

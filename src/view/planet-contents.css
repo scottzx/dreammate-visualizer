@@ -1,0 +1,29 @@
+.planet-contents-details { margin: 17px 0; padding: 13px; border: 1px solid #8aafca27; background: #0c1b2b99; border-radius: 3px; }
+.planet-content-totals { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #8aafca25; }
+.planet-content-totals > div { display: flex; align-items: baseline; gap: 5px; }
+.planet-content-totals strong { color: #c4e9f0; font: 18px 'SFMono-Regular', Consolas, monospace; }
+.planet-content-totals span, .planet-storage-heading span { font-size: 9px; color: #98aebf; }
+.planet-storage-heading { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 12px; color: #d4e3ef; }
+.planet-storage-total { display: flex; align-items: baseline; gap: 10px; margin-top: 11px; }
+.planet-storage-total > strong { font: 20px 'SFMono-Regular', Consolas, monospace; color: #dbeaf7; }
+.planet-storage-total > span { color: #9daec4; font-size: 10px; }
+.planet-storage-track { display: flex; height: 7px; margin: 10px 0; overflow: hidden; border-radius: 1px; background: #737c8977; }
+.planet-storage-track i { flex-shrink: 0; height: 100%; }
+.planet-storage-categories { display: grid; gap: 7px; margin-top: 12px; }
+.planet-storage-categories > div { display: flex; align-items: center; gap: 7px; font-size: 10px; color: #b2c4d3; }
+.planet-storage-categories strong { margin-left: auto; font-weight: normal; color: #d7e3ec; }
+.planet-storage-categories small { width: 47px; text-align: right; color: #9baabd; font-size: 9px; }
+.planet-contents-details i, .project-footprint-details i { display: inline-block; flex-shrink: 0; width: 5px; height: 5px; border-radius: 1px; }
+.planet-contents-details .planet-storage-track i { border-radius: 0; height: 100%; }
+.planet-storage-note, .planet-storage-scope { color: #8c9eae; font-size: 10px; line-height: 1.65; margin: 10px 0 0; }
+.planet-storage-note i { margin-right: 5px; }
+.planet-storage-scope { padding-top: 10px; border-top: 1px solid #8aafca20; }
+.planet-project-row { border-top: 1px solid #8aafca20; margin-top: 9px; padding-top: 9px; }
+.planet-project-row summary { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 10px; color: #b9cddd; }
+.planet-project-row summary > span { flex: 1; }
+.planet-project-row summary strong { font-weight: 400; color: #cddbea; white-space: nowrap; }
+.project-footprint-details { margin: 12px 0; }
+.project-footprint-details > div { display: grid; gap: 7px; }
+.project-footprint-details strong { font-size: 10px; font-weight: normal; color: #b1c6d5; }
+.project-footprint-details strong i { margin-right: 6px; }
+.project-footprint-details code, .project-footprint-details small { font-size: 9px; color: #8f9fae; overflow-wrap: anywhere; line-height: 1.7; }

@@ -5,10 +5,11 @@ import { MathUtils, PerspectiveCamera, TOUCH, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { universeOverviewDistance, UNIVERSE_OVERVIEW_FOV } from './universe-framing';
 import { ORBIT_CENTER_Y } from './universe-motion';
+import type { GalaxySystemLayout } from './galaxy-layout';
 
 export interface UniverseNavigationAction {
   sequence: number;
-  type: 'zoom-in' | 'zoom-out' | 'overview' | 'focus-selected';
+  type: 'zoom-in' | 'zoom-out' | 'overview' | 'focus-selected' | 'focus-service-system';
 }
 
 export const UNIVERSE_CAMERA = {
@@ -31,13 +32,14 @@ interface UniverseNavigationProps {
   positions: RefObject<Map<string, Vector3>>;
   sizes: Map<string, number>;
   ringRadius: number;
+  localSystem?: GalaxySystemLayout;
   selectedIds: Set<string>;
   orbitTime: RefObject<number>;
   sceneElement: RefObject<HTMLDivElement | null>;
 }
 
 /** Full spherical navigation, separate from the illustrative physical orbit clock. */
-export default function UniverseNavigation({ resetKey, action, positions, sizes, ringRadius, selectedIds, orbitTime, sceneElement }: UniverseNavigationProps) {
+export default function UniverseNavigation({ resetKey, action, positions, sizes, ringRadius, localSystem, selectedIds, orbitTime, sceneElement }: UniverseNavigationProps) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<OrbitControlsImpl>(null);
   const following = useRef<string | null>(null);
@@ -74,13 +76,15 @@ export default function UniverseNavigation({ resetKey, action, positions, sizes,
     const orbit = controls.current;
     if (!orbit || !action) return;
     if (action.type === 'overview') { overview(); return; }
-    if (action.type === 'focus-selected') {
-      const id = [...selected.current].find((value) => positions.current.has(value));
+    if (action.type === 'focus-selected' || action.type === 'focus-service-system') {
+      const id = action.type === 'focus-service-system' ? localSystem?.centerNodeId : [...selected.current].find((value) => positions.current.has(value));
       const position = id && positions.current.get(id);
       if (!position || !id) { overview(); return; }
       offset.copy(camera.position).sub(orbit.target);
       if (offset.lengthSq() < 0.001) offset.set(...UNIVERSE_CAMERA.overviewOffset);
-      offset.setLength(Math.max(6, (sizes.get(id) ?? 1) * 7));
+      offset.setLength(action.type === 'focus-service-system' && localSystem
+        ? universeOverviewDistance(localSystem.minorRadius, localSystem.maxPlanetRadius, size.width / size.height)
+        : Math.max(6, (sizes.get(id) ?? 1) * 7));
       orbit.target.copy(position);
       camera.position.copy(position).add(offset);
       following.current = id;
@@ -120,6 +124,7 @@ export default function UniverseNavigation({ resetKey, action, positions, sizes,
       element.dataset.cameraTarget = orbit.target.toArray().map((value) => value.toFixed(2)).join(',');
       element.dataset.selectedRadiusPx = focusPosition ? projectedRadiusPx(camera, focusPosition, sizes.get(selectedId!) ?? 1, size.height).toFixed(3) : '0';
       element.dataset.navigationMode = following.current ? 'following' : overviewMode.current ? 'overview' : 'manual';
+      element.dataset.followedNodeId = following.current ?? '';
       element.dataset.orbitTime = orbitTime.current.toFixed(3);
       lastMetrics.current = clock.elapsedTime;
     }

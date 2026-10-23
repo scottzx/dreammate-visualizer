@@ -1,5 +1,5 @@
 import { GB } from '../read-model/storage';
-import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ProjectView, ServiceView, WorkStatus } from '../read-model/types';
+import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ProjectCategory, ProjectStorageView, ProjectView, ServiceView, WorkStatus } from '../read-model/types';
 
 /** Isolated, explicitly labeled scenario. It never reads or writes a real source. */
 export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
@@ -47,10 +47,11 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     event('brief-start', '季度报告工作单开始推进', 'running', 58, 'studio', 'brief', 'brief-1', undefined, 'orchestrator'),
     event('calendar-done', '日程整理完成，业务已接受', 'succeeded', 95, 'mobile', 'calendar', 'calendar-1', undefined, 'calendar'),
   ];
+  const projectStorage = (project: string, node: string, category: ProjectCategory, gb: number): ProjectStorageView => ({ nodeId: `demo:node:${node}`, category, bytes: gb * GB, status: 'ok', observedAt, source: 'demo', metric: 'allocated-disk-bytes', path: `demo://projects/${project}/${node}` });
   const projects: ProjectView[] = [
-    { id: 'demo:project:universe', name: '能力宇宙沙盘', nodeIds: ['demo:node:studio'], sessionCount: 18, providers: [{ name: 'Codex', count: 10 }, { name: 'Claude', count: 5 }, { name: 'DSH', count: 3 }], status: 'ok', observedAt, evidence: evidence('project-universe') },
-    { id: 'demo:project:report', name: '经营策略研究', nodeIds: ['demo:node:studio', 'demo:node:compute', 'demo:node:workstation'], sessionCount: 72, providers: [{ name: 'Codex', count: 18 }, { name: 'Claude', count: 36 }, { name: 'DSH', count: 12 }], status: 'partial', observedAt, evidence: evidence('project-report', '示例跨设备项目共用身份；有6个会话未明确归属宿主') },
-    { id: 'demo:project:notes', name: '新想法实验室', nodeIds: ['demo:node:studio'], sessionCount: 3, providers: [{ name: 'Codex', count: 2 }, { name: 'Claude', count: 1 }], status: 'ok', observedAt, evidence: evidence('project-notes') },
+    { id: 'demo:project:universe', name: '能力宇宙沙盘', nodeIds: ['demo:node:studio'], sessionCount: 18, providers: [{ name: 'Codex', count: 10 }, { name: 'Claude', count: 5 }, { name: 'DSH', count: 3 }], status: 'ok', observedAt, evidence: evidence('project-universe'), storage: [projectStorage('universe', 'studio', 'other', 5)] },
+    { id: 'demo:project:report', name: '经营策略研究', nodeIds: ['demo:node:studio', 'demo:node:compute', 'demo:node:workstation'], sessionCount: 72, providers: [{ name: 'Codex', count: 18 }, { name: 'Claude', count: 36 }, { name: 'DSH', count: 12 }], status: 'partial', observedAt, evidence: evidence('project-report', '示例跨设备项目共用身份；有6个会话未明确归属宿主'), storage: [projectStorage('report', 'studio', 'business-agent', 28), projectStorage('report', 'compute', 'business-agent', 96), projectStorage('report', 'workstation', 'business-agent', 76)] },
+    { id: 'demo:project:notes', name: '感知能力实验室', nodeIds: ['demo:node:studio', 'demo:node:mobile'], sessionCount: 3, providers: [{ name: 'Codex', count: 2 }, { name: 'Claude', count: 1 }], status: 'ok', observedAt, evidence: evidence('project-notes'), storage: [projectStorage('notes', 'studio', 'perception', 14), projectStorage('notes', 'mobile', 'perception', 20)] },
   ];
-  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 15000, nodes, services, jobs, events, projects, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。'] };
+  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 15000, nodes, services, jobs, events, projects, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '每个服务一个能力卫星，每个可见 Skill ID 一个星点；球面蓝绿区域为项目存储比例，灰色为未归属容量，边缘设备未探查。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。'] };
 }

@@ -1,4 +1,4 @@
-import type { CoverageStatus, ObserverSnapshot, WorkStatus } from './types';
+import type { CoverageStatus, NodeView, ObserverSnapshot, WorkStatus } from './types';
 
 export const workStatusLabels: Record<WorkStatus, string> = {
   queued: '排队', running: '执行中', input_required: '等待用户', succeeded: '已完成',
@@ -8,6 +8,12 @@ export const coverageLabels: Record<CoverageStatus, string> = {
   ok: '已采集', offline: '离线', unavailable: '不可用', forbidden: '无权限',
   unsupported: '不支持', partial: '部分覆盖', stale: '已过期', unknown: '范围未知',
 };
+
+/** Network presence is independent of whether a device exposes a reachable gateway. */
+export function nodeIsNetworkOnline(node: Pick<NodeView, 'online' | 'networkOnline' | 'status'>): boolean {
+  if (typeof node.networkOnline === 'boolean') return node.networkOnline;
+  return node.online === true && node.status !== 'stale' && node.status !== 'offline';
+}
 
 /** Counts only facts explicitly available in this snapshot; no inferred busy state. */
 export function snapshotFacts(snapshot: ObserverSnapshot) {

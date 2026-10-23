@@ -25,18 +25,21 @@ test('partial skill pages survive disconnect and cached catalogs become stale wi
   const url = `http://127.0.0.1:${address.port}`;
   try {
     const adapter = new NodeAdapter(parseConfig({ nodeUrls: [url], timeoutMs: 300, staleAfterMs: 5000 }, {}));
-    const first = await adapter.read({ url }, timestamp);
+    const first = await adapter.read({ url, networkOnline: true }, timestamp);
     assert.equal(first.node.catalogAvailable, true);
     assert.equal(first.node.online, true);
     assert.equal(first.source.status, 'partial');
     assert.equal(first.services[0].skills.length, 1);
     unavailable = true;
-    const stale = await adapter.read({ url }, '2026-10-22T09:00:10.000Z');
+    const stale = await adapter.read({ url, networkOnline: false }, '2026-10-22T09:00:10.000Z');
     assert.equal(stale.node.id, first.node.id);
     assert.equal(stale.node.status, 'stale');
+    assert.equal(stale.node.networkOnline, false, 'fresh network status replaces cached online presence');
     assert.equal(stale.source.observedAt, timestamp);
     assert.equal(stale.services[0].skills.length, 1);
     assert.equal(stale.services[0].status, 'unknown');
+    const unknownNetwork = await adapter.read({ url }, '2026-10-22T09:00:11.000Z');
+    assert.equal(unknownNetwork.node.networkOnline, null, 'missing network evidence does not reuse an old online flag');
     const freshAdapter = new NodeAdapter(parseConfig({ nodeUrls: [url], timeoutMs: 300 }, {}));
     const unknown = await freshAdapter.read({ url });
     assert.equal(unknown.node.catalogAvailable, false);

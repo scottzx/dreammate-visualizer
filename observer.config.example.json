@@ -6,5 +6,6 @@
   "staleAfterMs": 45000,
   "maxNodes": 24,
   "maxPages": 5,
-  "acpSources": []
+  "acpSources": [],
+  "localProjects": []
 }

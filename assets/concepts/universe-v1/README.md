@@ -13,7 +13,7 @@
 
 [打开素材风格对照页](index.html)。所有 PNG 保留 RGBA 透明通道。
 
-本机现有观察服务提供 [Tailscale 对照预览](http://100.64.0.2:4318/style-lab/universe-v1/index.html)，已从另一台 Tailnet 设备验证 HTTP 200。预览文件复制在被忽略的 `dist/style-lab/universe-v1/`；重新构建应用后，如需继续展示，可将本目录的 `index.html` 与八件 PNG 复制回该目录。源素材不受应用构建影响。
+本机现有观察服务提供 [Tailscale 对照预览](http://scott-mac.tailfb4720.ts.net:4318/style-lab/universe-v1/index.html)，已从另一台 Tailnet 设备验证 HTTP 200。预览文件复制在被忽略的 `dist/style-lab/universe-v1/`；重新构建应用后，如需继续展示，可将本目录的 `index.html` 与八件 PNG 复制回该目录。源素材不受应用构建影响。
 
 ## 复用方向
 

@@ -1,23 +1,27 @@
 import type { ObserverSnapshot } from '../read-model/types';
 import { nodeStorageRadius } from '../read-model/storage';
 import { stableNodeHash, type LayoutAssignment } from './layout';
+import type { HierarchicalOrbit } from './galaxy-layout';
 
 export const UNIVERSE_LAYOUT_STORAGE_KEY = 'dreammate.universe-layout.v2';
 export const UNIVERSE_NEIGHBOR_ARC_LENGTH = 16;
 export interface UniversePlot {
   id: string; slot: number; x: number; y: number; z: number;
   orbitRadius: number;
+  role?: 'relay-center' | 'service-center' | 'system-center';
+  galaxy?: HierarchicalOrbit;
 }
 export interface UniverseLayout { assignments: LayoutAssignment[]; plots: Map<string, UniversePlot>; rings: number[]; radius: number }
 export interface UniversePeerConnection { from: string; to: string }
 export interface UniverseLabelAnchor { id: string; x: number; y: number; width: number; height: number; priority: number }
 export interface UniverseScreenObstacle { x: number; y: number; radius: number }
 export interface UniverseLabelPlacement { x: number; y: number; visible: boolean }
+export interface UniverseLabelRegion { left: number; right: number; top: number; bottom: number }
 
 /** Keep text clear of every planet as well as other text. */
-export function placeUniverseLabels(anchors: UniverseLabelAnchor[], planets: UniverseScreenObstacle[], width: number, height: number): Map<string, UniverseLabelPlacement> {
+export function placeUniverseLabels(anchors: UniverseLabelAnchor[], planets: UniverseScreenObstacle[], width: number, height: number, reserved: UniverseLabelRegion[] = []): Map<string, UniverseLabelPlacement> {
   const result = new Map<string, UniverseLabelPlacement>();
-  const placed: { left: number; right: number; top: number; bottom: number }[] = [];
+  const placed: UniverseLabelRegion[] = [...reserved];
   const shifts = [0, -62, 62, -124, 124, -186, 186, -248, 248, -310, 310]
     .flatMap((dy) => [0, -160, 160, -320, 320, -480, 480].map((dx) => ({ dx, dy })))
     .sort((a, b) => a.dx ** 2 + a.dy ** 2 - b.dx ** 2 - b.dy ** 2);
@@ -49,7 +53,7 @@ export function universeRingRadius(deviceCount: number): number {
  * nodes remain in the ring; search/state filters are applied only when rendering.
  * Membership changes re-space the circle, without leaving empty orbit slots.
  */
-export function createUniverseLayout(nodeIds: readonly string[], saved: readonly LayoutAssignment[] = []): UniverseLayout {
+export function createUniverseLayout(nodeIds: readonly string[], saved: readonly LayoutAssignment[] = [], centerNodeId?: string): UniverseLayout {
   const identities = [...new Set(nodeIds)];
   const slots = new Map<string, number>();
   const occupied = new Set<number>();
@@ -69,15 +73,19 @@ export function createUniverseLayout(nodeIds: readonly string[], saved: readonly
     slots.set(id, nextSlot); occupied.add(nextSlot); nextSlot += 1;
   }
   const plots = new Map<string, UniversePlot>();
-  const radius = universeRingRadius(identities.length);
+  const orbitIds = identities.filter(id => id !== centerNodeId);
+  const radius = universeRingRadius(orbitIds.length);
   identities.sort((a, b) => slots.get(a)! - slots.get(b)!);
-  identities.forEach((id, index) => {
-    const angle = index / identities.length * Math.PI * 2 + Math.PI / 12;
+  orbitIds.sort((a, b) => slots.get(a)! - slots.get(b)!);
+  orbitIds.forEach((id, index) => {
+    const angle = index / orbitIds.length * Math.PI * 2 + Math.PI / 12;
     plots.set(id, { id, slot: slots.get(id)!, orbitRadius: radius,
       x: Math.cos(angle) * radius, y: 0.3, z: Math.sin(angle) * radius });
   });
+  if (centerNodeId && identities.includes(centerNodeId)) plots.set(centerNodeId,
+    { id: centerNodeId, slot: slots.get(centerNodeId)!, x: 0, y: 0.3, z: 0, orbitRadius: 0, role: 'relay-center' });
   return { assignments: [...slots].map(([id, slot]) => ({ id, slot })), plots,
-    rings: identities.length ? [radius] : [], radius };
+    rings: orbitIds.length ? [radius] : [], radius };
 }
 
 /** An undirected complete graph models peer relationships, not measured reachability or traffic. */
@@ -87,7 +95,7 @@ export function universePeerConnections(nodeIds: readonly string[]): UniversePee
 }
 
 /** Centre identity and catalogue size never change the total storage scale. */
-export function universeNodeSize(snapshot: ObserverSnapshot, nodeId: string): number {
+export function universeNodeSize(snapshot: Pick<ObserverSnapshot, 'nodes'>, nodeId: string): number {
   return nodeStorageRadius(snapshot.nodes.find(node => node.id === nodeId));
 }
 

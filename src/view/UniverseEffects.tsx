@@ -136,25 +136,11 @@ const glowFragment = `varying vec2 vUv;uniform vec3 tint;uniform float strength;
 export function PlanetHologram({ radius, core, color, selected, animate }: {
   radius: number; core: boolean; color: string; selected: boolean; animate: boolean;
 }) {
-  const assembly = useRef<Group>(null);
   const glow = useRef<Group>(null);
   const camera = useThree((state) => state.camera);
-  const time = useDisplayClock(animate);
   const aura = useMemo(() => ({ tint: { value: new Color(color) }, strength: { value: selected ? .22 : .065 } }), [color, selected]);
-  const halo = useMemo(() => ({ tint: { value: new Color(core ? '#ffb340' : '#73d7ff') }, strength: { value: core ? 1.25 : .85 } }), [core]);
-  const particles = useMemo(() => {
-    const count = core ? 1100 : 540, positions = new Float32Array(count * 3), colors = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const angle = visualRandom(`photon-angle:${i}`) * Math.PI * 2;
-      const orbit = 1.34 + visualRandom(`photon-orbit:${i}`) * .47;
-      positions.set([Math.cos(angle) * orbit, (visualRandom(`photon-height:${i}`) - .5) * .032, Math.sin(angle) * orbit], i * 3);
-      const tint = new Color(i % 9 === 0 ? '#6ac9f0' : core ? '#ffce8c' : '#a6dcec');
-      colors.set([tint.r, tint.g, tint.b], i * 3);
-    }
-    return { positions, colors };
-  }, [core]);
+  const halo = useMemo(() => ({ tint: { value: new Color(core ? '#ffb340' : '#b8c4d0') }, strength: { value: core ? 1.25 : .65 } }), [core]);
   useFrame(() => {
-    if (assembly.current) assembly.current.rotation.y = time.current * (core ? 0.035 : -0.025);
     if (glow.current) glow.current.quaternion.copy(camera.quaternion);
   });
   return <group>
@@ -168,18 +154,6 @@ export function PlanetHologram({ radius, core, color, selected, animate }: {
       <shaderMaterial uniforms={aura} vertexShader={auraVertex} fragmentShader={auraFragment} transparent blending={AdditiveBlending}
         depthWrite={false} side={BackSide} toneMapped={false} />
     </mesh>
-    <group ref={assembly}>
-      <group rotation={[.43, -.16, -.35]} scale={radius}>
-        <points raycast={() => {}}><bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[particles.positions, 3]} />
-          <bufferAttribute attach="attributes-color" args={[particles.colors, 3]} />
-        </bufferGeometry><pointsMaterial vertexColors size={.018 * radius} transparent opacity={.88} blending={AdditiveBlending} depthWrite={false} toneMapped={false} /></points>
-      </group>
-      <HoloRing radius={radius * 1.72} width={radius * .006} color={core ? '#f1c58b' : '#86bfd3'} opacity={.32} animate={animate}
-        rotation={[-Math.PI / 2 + .43, -.16, -.35]} segments={96} speed={-.012} />
-      {selected && <HoloRing radius={radius * 1.96} width={radius * .011} color={UNIVERSE_VISUALS.ice}
-        opacity={.5} animate={animate} rotation={[-Math.PI / 2, 0, 0]} segments={48} speed={.008} />}
-    </group>
   </group>;
 }
 

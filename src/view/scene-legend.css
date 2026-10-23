@@ -1,0 +1,51 @@
+.world-legend-button {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 12px;
+  border: 1px solid #36667e; border-radius: 3px; background: #081d2de8; color: #b8d9e7;
+  font-size: 11px; pointer-events: auto; backdrop-filter: blur(8px);
+}
+.world-legend-button:hover { border-color: #76d6e6; background: #143c4e; }
+.scene-legend-dialog {
+  width: min(740px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 0;
+  overflow: hidden; color: #d6e5f0; background: linear-gradient(130deg, #102a3b, #071321 75%);
+  border: 1px solid #3e7894; border-radius: 7px; box-shadow: 0 20px 100px #000a;
+}
+.scene-legend-dialog::backdrop { background: #010710b8; backdrop-filter: blur(5px); }
+.scene-legend-dialog[open] { display: flex; flex-direction: column; }
+.scene-legend-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex: none; padding: 20px 24px 16px; border-bottom: 1px solid #2d5368; }
+.scene-legend-header h2 { display: flex; align-items: center; gap: 8px; margin: 7px 0 5px; color: #e2f6ff; font-size: 20px; font-weight: 550; }
+.scene-legend-header p { color: #8faebe; font-size: 12px; }
+.scene-legend-header > button { flex: none; }
+.scene-legend-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; overflow: auto; overscroll-behavior: contain; padding: 18px 24px; }
+.scene-legend-section { min-width: 0; padding: 15px; background: #0b213066; border: 1px solid #28495c; border-radius: 4px; }
+.scene-legend-section h3 { margin-bottom: 13px; color: #c7e7f2; font-size: 12px; font-weight: 600; }
+.scene-legend-section p { margin-top: 12px; color: #91aebe; font-size: 11px; line-height: 1.8; }
+.scene-legend-wide { grid-column: 1 / -1; }
+.scene-legend-states, .scene-legend-symbols, .scene-legend-colors, .scene-legend-lines { display: grid; gap: 12px; font-size: 11px; }
+.scene-legend-states > span, .scene-legend-symbols > span, .scene-legend-colors > span, .scene-legend-lines > span { display: flex; align-items: center; gap: 9px; }
+.legend-planet { width: 21px; height: 21px; flex: none; border: 1px solid #53798f; border-radius: 50%; }
+.legend-planet.online { background: radial-gradient(circle at 40% 35%, #d4f7ff, #558ca6 45%, #1d3a51 80%); box-shadow: 0 0 14px #8ae9ff44; }
+.legend-planet.offline { background: radial-gradient(circle at 40% 35%, #263a49, #101d2a 70%); border-color: #344c5e; }
+.scene-legend-sizes { display: flex; align-items: flex-end; justify-content: space-around; min-height: 60px; gap: 10px; }
+.scene-legend-sizes > span { display: grid; justify-items: center; align-items: end; gap: 8px; }
+.scene-legend-sizes i { display: block; border: 1px solid #91c8dc; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #659cb15c, #122331 75%); }
+.scene-legend-sizes small { color: #aac9d8; font-size: 10px; }
+.scene-legend-symbols b { width: 21px; flex: none; text-align: center; font-size: 22px; line-height: 1; font-weight: normal; }
+.legend-satellite { color: #98e1ee; } .legend-skill { color: #f0d5a3; }
+.scene-legend-colors, .scene-legend-lines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.scene-legend-colors i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
+.legend-line { width: 26px; height: 2px; flex: none; background: #77dce9; }
+.legend-line.relay { background: #efbd70; } .legend-line.peer { height: 1px; background: #518ca480; }
+.legend-line.event { height: 0; border-top: 1px dashed #81d6e6; background: none; }
+.scene-legend-network { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #2b4b5f; font-size: 11px; color: #91aebe; }
+.scene-legend-network strong { color: #e3bd84; font-weight: 500; }
+.scene-legend-network > span:last-child { flex-basis: 100%; }
+.scene-legend-footer { flex: none; padding: 12px 24px; border-top: 1px solid #2d5368; color: #8faebe; font-size: 11px; line-height: 1.7; }
+@media (max-width: 600px) {
+  .scene-legend-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 32px); }
+  .scene-legend-header { padding: 16px 18px 13px; }
+  .scene-legend-header h2 { font-size: 18px; }
+  .scene-legend-body { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px; }
+  .scene-legend-colors { gap: 12px 7px; }
+  .scene-legend-lines { grid-template-columns: minmax(0, 1fr); }
+  .scene-legend-footer { padding: 11px 18px; font-size: 10px; }
+}

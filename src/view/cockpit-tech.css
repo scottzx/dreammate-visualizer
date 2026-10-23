@@ -4,8 +4,6 @@
 .cockpit-header:after{content:'';position:absolute;left:0;bottom:-1px;width:22%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,#82f3ff,transparent);filter:drop-shadow(0 0 4px #58dfff);animation:telemetry-light 14s linear infinite}
 .cockpit-brand>svg{color:#7cefff;filter:drop-shadow(0 0 8px #0bceff99)}
 .cockpit-brand strong{letter-spacing:1px;text-shadow:0 0 20px #75dfff3d}
-.cockpit-brand small{color:#89bfd5}
-.cockpit-command-bar{background:linear-gradient(90deg,#081b2aeb,#06101def);border-bottom-color:#23465b;box-shadow:inset 0 -1px #8cddff0b}
 .cockpit-search{border-color:#2e5970;box-shadow:inset 0 0 15px #0004}
 .square-button,.scene-tools button{background:linear-gradient(145deg,#102a3a,#071423);border-color:#36617a;border-radius:2px;box-shadow:inset 0 1px #9defff0d}
 .square-button:hover,.scene-tools button:hover{border-color:#63dcef;box-shadow:0 0 14px #00cfff20,inset 0 0 12px #28b7e315}
