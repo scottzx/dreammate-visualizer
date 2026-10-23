@@ -5,6 +5,7 @@ import { centralNetworkRelay } from '../read-model/network';
 import { serviceEntry, serviceSystems } from '../read-model/service-systems';
 import { displayNetworkEndpoint } from '../read-model/ip-privacy';
 import { PROJECT_COLORS, PROJECT_CATEGORY_LABELS } from '../read-model/planet-contents';
+import { voyageCounts } from '../read-model/voyages';
 import './scene-legend.css';
 
 export default function SceneLegend({ snapshot, showConnections, onClose }: {
@@ -20,6 +21,7 @@ export default function SceneLegend({ snapshot, showConnections, onClose }: {
   const relayed = network?.connections.filter(connection => connection.kind === 'derp').length;
   const entry = snapshot ? serviceEntry(snapshot, window.location.href) : undefined;
   const local = snapshot && entry ? serviceSystems(snapshot, entry).find(system => system.kind === 'entry') : undefined;
+  const voyageStats = voyageCounts(snapshot?.voyages ?? []);
 
   return <dialog ref={dialog} className="scene-legend-dialog" aria-labelledby="scene-legend-title" aria-describedby="scene-legend-description" onClose={onClose}
     onClick={event => {
@@ -52,6 +54,12 @@ export default function SceneLegend({ snapshot, showConnections, onClose }: {
         <h3>卫星与星点</h3>
         <div className="scene-legend-symbols"><span><b className="legend-satellite">◈</b>一颗卫星 = 一个可见服务</span><span><b className="legend-skill">✦</b>一个星点 = 一个可见 Skill 包</span></div>
         <p>点击卫星查看服务方法，点击 Skill 星点阅读完整文档。Skill 按目录 ID 去重；目录部分覆盖时，只展示已观测到的条目。公转为示意，不表示实时任务。</p>
+      </section>
+      <section className="scene-legend-section scene-legend-wide">
+        <h3>会话航次 · 小飞船</h3>
+        <div className="scene-legend-lines"><span><i className="legend-line direct" />青蓝 · 普通会话航迹</span><span><i className="legend-line acp" />紫色 · ACP 工作单航迹</span><span>◭ 一艘飞船 = 一次会话 / 一个 ACP 工作单</span></div>
+        <p>每次会话或 ACP 工作单是一艘小飞船：从项目目录泊位出发，在结构化 DreamMate MCP 工具调用解析出的设备停靠，最后一个停靠点就是终点；没有 MCP 停靠时停在起点。</p>
+        <p>每个刷新周期重演一次起航，飞船位置是视觉示意，不代表执行时长、成功率或业务接受。当前可见 {voyageStats.sessions + voyageStats.acp} 个航次（{voyageStats.sessions} 普通 / {voyageStats.acp} ACP），{voyageStats.stops} 个停靠点，{voyageStats.mcpCalls} 次 MCP 调用。</p>
       </section>
       <section className="scene-legend-section">
         <h3>球面颜色 · 项目存储占比</h3>

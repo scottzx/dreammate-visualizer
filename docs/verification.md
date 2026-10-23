@@ -149,3 +149,33 @@
 ## 立体轨道与 IP 隐私 v10
 
 91 项测试及生产构建通过。实况页面有 6 个独立大轨道平面、6 个独立小轨道平面、13 个自转轴；恢复后 12 台外圈设备均有纵向位移，DERP 中心保持固定。暂停时坐标与共享时钟不变，服务太阳系跟随正常，浏览器 error 为 0。真实与演示接口均已隐藏 IP，场景 DOM 属性及来源抽屉扫描为 0 个 IP 字面量。详见 [立体轨道](spatial-orbits-v10.md) 与 [IP 隐私](ip-privacy-v9.md)，截图、页面读数和构建副本在本地忽略目录 artifacts/spatial-orbits-v10/。为实际页面自检，不宣称独立评审。
+
+## 会话航次与小飞船 v12（2026-10-23）
+
+每次本机会话或 ACP 工作单作为一个航次：项目目录泊位 → 结构化 DreamMate MCP 调用解析出的设备停靠 → 最后停靠点；每 3 分钟刷新周期重演一次起航。新增 `voyages` 读模型、`sessions:1session` 来源、ACP 航次派生、小飞船/航线/停靠脉冲、航次列表与详情、图例、开关、搜索与指标。
+
+- `npm test` 153 项通过，0 失败；`npx tsc --noEmit` 与 `npm run build` 通过。新增测试覆盖：MCP 工具名识别、显式 node/service 解析、连续停靠合并、未确认停靠、终点规则、3 分钟周期相位、项目最长目录匹配、路径脱敏、ACP 尝试航次、航次节点集合、会话窗口/轮次/调用预算与 source 状态、60 秒缓存、暂停冻结、星舰尺寸比例与目的地盘旋角度。
+- 实况（`127.0.0.1:4318`，本机 launchd）：12 个近期航次（窗口内 12 条上限），13 台设备、33 个服务；其中 1 个航次识别到 2 次 MCP 调用、合并为 1 个停靠点；`sessions:1session` 为部分覆盖，达到会话列表上限。航次载荷不含 `/Users/` 绝对路径。
+- 演示：4 个航次（3 普通会话 + 1 ACP）、7 个停靠点、7 次 MCP；飞船沿节点间抬升航线运行，停靠点脉冲，ACP 航次使用紫色以区别于 DERP 金色。
+- 浏览器（2552×1229 CSS）：航次面板、详情停靠序列、图例、图层开关、搜索“转写”保留航次起终点设备均通过；控制台 error 为 0，仅保留既有 THREE.Clock 弃用警告。390×844 移动端航次页签与底部目录不溢出。
+- 修复后台托管环境：launchd 的极简 PATH 使 `1session` 的 `#!/usr/bin/env node` 找不到 node；`service:install` 现在把当前 Node 目录和 `/opt/homebrew/bin` 写入 plist PATH，服务重启后会话来源恢复。另修复按航次搜索时场景设备被全部过滤的问题，并对会话标题中的 `/Users/<name>`、`/home/<name>`、`C:\\Users\\<name>` 做发布前脱敏。
+- 截图与逐项检查：`artifacts/session-voyages-v12/`（`demo-fleet.png`、`voyage-panel.png`、`voyage-detail.png`、`legend.png`、`mobile.png`、`live-panel.png`、`verification.json`）。为实际页面自检，不宣称独立评审。
+
+### 星舰模型与目的地盘旋（2026-10-23 修订）
+
+- 按用户反馈弃用程序化锥体船，改用项目已有的 `ship-base` / `ship-advanced` GLB；普通会话用基础星舰，ACP 用进阶星舰。
+- 船长约为设备能力环半径的 1/3（world scale 0.075–0.28，最大行星封顶），介于 Skill 星点与星环之间，比上一版明显更小。
+- 到终点后不再停靠：围绕目的地做倾斜盘旋，盘旋半径约为行星半径的 1.55 倍；中间停靠沿行星切线缓慢漂移，未离港船只绕项目泊位巡航，航程中保持飞行。盘旋时钟独立于航程时钟，快照周期结束后仍继续转，直到下一次快照重置。
+- `npm test` 153 项通过，0 失败；新增测试覆盖星舰尺寸比例、盘旋角度推进、盘旋点/切线与暂停冻结。浏览器验证星舰模型加载无 error，仅保留既有 `THREE.Clock` 弃用警告。截图追加 `starship-closeup.png` 与 `destination-orbit.png`。
+
+## GitHub Pages 静态演示（2026-10-23）
+
+落地页 `docs/index.html` 新增 `#demo` 区域，用 iframe 懒加载 `docs/demo/`；该目录由 `npm run build:demo` 生成（`VITE_STANDALONE_DEMO=1`、`--base ./`、`--outDir docs/demo`）。该构建不连接观察后端，演示快照与 Skill 文档都在浏览器内生成，只保留演示模式。
+
+- `npm test` 156 项通过，0 失败（新增 3 项：相对资源路径、独立演示快照完整性、演示 Skill 文档本地生成）。
+- `npm run build` 与 `npm run build:demo` 均通过；演示目录 6.4 MB，页面入口 318.8 kB（gzip 101 kB），三维场景与模型按需加载。
+- 本地静态服务验证 `http://127.0.0.1:4321/demo/`：无 `/api` 请求，`/demo/models/universe-v1/*.glb` 均返回 200；设备、能力、航次面板与演示 Skill 文档可用；模型图鉴的相对 GLB 下载链接正常。
+- 落地页 1600×900：iframe 内演示正常启动，控制台无 error，仅保留既有 `THREE.Clock` 弃用警告；390×844 显示静态海报并链接独立演示页，无横向溢出。
+- 海报 `docs/assets/demo-poster.jpg`（1600×900，178 KB）取自实际演示构建。
+- 未验证项：GitHub Pages 线上发布后的缓存刷新，以及真实移动 Safari 的 iframe 行为；推送后需复查 https://scottzx.github.io/dreammate-visualizer/demo/。
+- 截图与页面读数为本地自检，未做独立评审。

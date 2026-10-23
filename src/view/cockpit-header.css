@@ -68,3 +68,6 @@
 @media (max-width: 380px) {
   .cockpit-brand strong { display: none; }
 }
+
+/* Static GitHub Pages build: the scenario is fixed, so the mode control becomes a label. */
+.mode-switch.standalone-demo-badge { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px; color: #f1c685; border-color: #6a5330; background: #241a10e8; font-size: 11px; }

@@ -1,5 +1,6 @@
 import { GB } from '../read-model/storage';
-import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ProjectCategory, ProjectStorageView, ProjectView, ServiceView, WorkStatus } from '../read-model/types';
+import type { AttemptView, EventView, JobView, NodeView, ObserverSnapshot, ProjectCategory, ProjectStorageView, ProjectView, ServiceView, VoyageView, WorkStatus } from '../read-model/types';
+import { buildVoyageStops, voyageDestination, voyageProjectId, type McpCallView } from '../read-model/voyages';
 
 /** Isolated, explicitly labeled scenario. It never reads or writes a real source. */
 export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
@@ -53,5 +54,46 @@ export function createDemoSnapshot(now: Date = new Date()): ObserverSnapshot {
     { id: 'demo:project:report', name: '经营策略研究', nodeIds: ['demo:node:studio', 'demo:node:compute', 'demo:node:workstation'], sessionCount: 72, providers: [{ name: 'Codex', count: 18 }, { name: 'Claude', count: 36 }, { name: 'DSH', count: 12 }], status: 'partial', observedAt, evidence: evidence('project-report', '示例跨设备项目共用身份；有6个会话未明确归属宿主'), storage: [projectStorage('report', 'studio', 'business-agent', 28), projectStorage('report', 'compute', 'business-agent', 96), projectStorage('report', 'workstation', 'business-agent', 76)] },
     { id: 'demo:project:notes', name: '感知能力实验室', nodeIds: ['demo:node:studio', 'demo:node:mobile'], sessionCount: 3, providers: [{ name: 'Codex', count: 2 }, { name: 'Claude', count: 1 }], status: 'ok', observedAt, evidence: evidence('project-notes'), storage: [projectStorage('notes', 'studio', 'perception', 14), projectStorage('notes', 'mobile', 'perception', 20)] },
   ];
-  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 180000, nodes, services, jobs, events, projects, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '每个服务一个能力卫星，每个可见 Skill ID 一个星点；球面蓝绿区域为项目存储比例，灰色为未归属容量，边缘设备未探查。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。'] };
+  const mcpCall = (seconds: number, toolName: string, args: Record<string, string>): McpCallView => ({
+    toolName, at: at(seconds), status: 'ok', argsText: JSON.stringify(args),
+    evidence: [{ sourceId: 'demo:scenario', nativeId: `demo-call-${seconds}`, locator: `demo://session/call/${seconds}`, observedAt: at(seconds),
+      note: '演示会话内的工具调用；停靠点只来自参数中显式的 node / service_id，不推测未给出的目标' }],
+  });
+  const voyage = (definition: { id: string; provider: string; title: string; project: string; projectName: string; started: number; updated: number; calls: McpCallView[] }): VoyageView => {
+    const stops = buildVoyageStops(definition.id, definition.calls, nodes, services, 'demo-studio');
+    const destination = voyageDestination(stops, 'demo:node:studio', '创作工作室');
+    return {
+      id: definition.id, nativeId: definition.id.replace('demo:voyage:', 'demo-session-'), kind: 'session', sourceId: 'demo:scenario',
+      provider: definition.provider, title: definition.title, projectId: voyageProjectId(definition.project), projectName: definition.projectName,
+      originNodeId: 'demo:node:studio', startedAt: at(definition.started), updatedAt: at(definition.updated),
+      status: definition.updated <= 300 ? 'active' : 'ended', stops, ...destination, mcpCalls: definition.calls.length,
+      evidence: evidence(`voyage-${definition.id}`, '演示会话按 3 分钟周期起航；最后一个停靠点即终点，没有 MCP 停靠时停在项目起点'),
+    };
+  };
+  const voyages: VoyageView[] = [
+    voyage({ id: 'demo:voyage:universe', provider: 'dsh', title: '能力宇宙视觉迭代', project: 'demo:project:universe', projectName: '能力宇宙沙盘', started: 260, updated: 8, calls: [
+      mcpCall(220, 'dreammate_search_tools', { query: '视觉设计 render', node: 'localhost' }),
+      mcpCall(164, 'dreammate_invoke', { node: 'demo-compute', service_id: 'demo-research', method: 'research.search' }),
+      mcpCall(96, 'dreammate_invoke', { node: 'demo-workstation', service_id: 'demo-design', method: 'design.render' }),
+      mcpCall(42, 'dreammate_inspect', { node: 'demo-workstation', service_id: 'demo-design', method: 'design.export' }),
+    ] }),
+    voyage({ id: 'demo:voyage:report', provider: 'codex', title: '季度经营报告与图表', project: 'demo:project:report', projectName: '经营策略研究', started: 420, updated: 70, calls: [
+      mcpCall(300, 'dreammate_invoke', { node: 'demo-compute', service_id: 'demo-research', method: 'research.summarize' }),
+      mcpCall(170, 'mcp__dreammate__dreammate_invoke', { node: 'demo-mobile', service_id: 'demo-calendar', method: 'calendar.list' }),
+      mcpCall(72, 'dreammate_invoke', { node: 'demo-workstation', service_id: 'demo-artifacts', method: 'artifacts.list' }),
+    ] }),
+    voyage({ id: 'demo:voyage:notes', provider: 'claude', title: '感知实验室排期梳理', project: 'demo:project:notes', projectName: '感知能力实验室', started: 900, updated: 340, calls: [] }),
+  ];
+  const acpVoyage: VoyageView = {
+    id: 'demo:voyage:acp-audio', nativeId: 'demo-job-audio', kind: 'acp', sourceId: 'demo:scenario', provider: 'acp',
+    title: '转写客户访谈录音', projectId: voyageProjectId('demo:project:notes'), projectName: '感知能力实验室',
+    originNodeId: 'demo:node:studio', startedAt: at(120), updatedAt: at(48), status: 'ended',
+    stops: [{ id: 'demo:voyage:acp-audio/stop/0', nodeId: 'demo:node:edge', nodeLabel: '边缘设备', serviceId: 'demo:service:transcribe', serviceLabel: '音频转写',
+      method: 'asr.transcribe', methods: ['asr.transcribe'], toolName: 'acp.attempt', at: at(48), status: 'unknown', calls: 1, resolved: true,
+      evidence: evidence('voyage-acp-audio-stop', 'ACP 执行尝试指向边缘设备；设备离线，停靠状态未知') }],
+    destinationNodeId: 'demo:node:edge', destinationLabel: '边缘设备', mcpCalls: 0,
+    evidence: evidence('voyage-acp-audio', 'ACP 工作单按执行尝试视为航次；起点为授权 origin 的本机网关，终点为最后一次尝试的目标设备'),
+  };
+  voyages.push(acpVoyage);
+  return { version: 1, mode: 'demo', layoutScope: 'scenario-v1', generatedAt: observedAt, refreshIntervalMs: 180000, nodes, services, jobs, events, projects, voyages, sources: [{ id: 'demo:scenario', name: '演示 · 能力宇宙场景', kind: 'node', status: 'ok', scope: '隔离演示场景；全部节点、工作单、事件、项目与统计均为示例', observedAt, diagnostics: ['演示数据未访问真实设备；示例关系仅用于说明观察界面'] }], limitations: ['演示模式：全部数据为独立构造的示例，不计入真实来源统计。', '5 个业务工作单包含 6 次执行尝试；返工不新增业务工作单。', '每个服务一个能力卫星，每个可见 Skill ID 一个星点；球面蓝绿区域为项目存储比例，灰色为未归属容量，边缘设备未探查。', '项目建筑统一占地与高度；外观等级按示例会话数区间变化，参与占比按会话宿主记录，不代表贡献质量。', '流动连线表示场景内有显式证据的委托，不表示上下文迁移。', '4 个演示航次：3 个普通会话 + 1 个 ACP 工作单；飞船只沿有证据的 MCP 停靠点飞行，没有停靠的会话停在项目起点。'] };
 }

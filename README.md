@@ -48,6 +48,23 @@ npm start
 
 生产模式由观察后端在 **http://127.0.0.1:4318** 提供 `dist/` 和 API。`npm start` 前先构建；本机现由 macOS 用户级 launchd 托管，未发布公网。
 
+## GitHub Pages 落地页与交互演示
+
+落地页直接发布 `main` 分支的 `docs/`（`docs/.nojekyll` 关闭 Jekyll 处理）：
+
+- **https://scottzx.github.io/dreammate-visualizer/**：一页宣传页
+- **https://scottzx.github.io/dreammate-visualizer/demo/**：可交互的能力宇宙演示
+
+演示页是独立于观察后端的纯静态构建。`npm run build:demo` 设置 `VITE_STANDALONE_DEMO=1`，以相对路径把页面、`assets/` 与 `models/` 输出到 `docs/demo/`。它不请求 `/api`：设备、项目、会话与航次由浏览器端按隔离演示场景生成，并保持 3 分钟一次的航次周期；Skill 文档同样在本地构造并标记为演示。该构建只提供演示模式，不包含真实来源切换。
+
+落地页的 `#demo` 区域用 iframe 懒加载演示页，窄屏改为静态海报 `docs/assets/demo-poster.jpg` 并链接到独立页面。修改演示界面后重新生成并一起提交：
+
+```sh
+npm run build:demo
+```
+
+演示构建约 6.4 MB（含 10 个 GLB 模型），仍在 GitHub Pages 站点容量限制内。
+
 ## macOS 后台托管
 
 本机已安装用户级服务 `com.1agents.dreammate-visualizer`，由 launchd 独立管理，登录后自动启动、退出后自动重启，任务对话结束不会停止服务。
@@ -61,7 +78,7 @@ npm run service:install
 npm run service:uninstall
 ```
 
-日志位于 `~/Library/Logs/DreamMateVisualizer/`。服务使用安装时的 Node 绝对路径和本仓 `observer.config.json`。手动运行 `npm start` 或 `npm run dev` 前，先移除当前托管，以释放 4318 端口。
+日志位于 `~/Library/Logs/DreamMateVisualizer/`。服务使用安装时的 Node 绝对路径和本仓 `observer.config.json`；plist 同时写入 Node 与 `/opt/homebrew/bin` 的 PATH，供可选的 `1session` 会话来源使用。升级 Node 或 CLI 后重新执行 `service:install`。手动运行 `npm start` 或 `npm run dev` 前，先移除当前托管，以释放 4318 端口。
 
 ## Tailscale 访问
 
@@ -83,7 +100,8 @@ npm run service:uninstall
 - 星球平面基地与建筑观察：服务工厂、技能学院、智能体驻地、项目工坊；统一建筑占地与总高度，附件表达规模。实况项目未接入时明确保留占位，演示项目独立。
 - 可复用模型：10 个真实 GLB，与源几何构造器、材料和接口一同维护。模型图鉴可旋转查看并下载资产。
 - 中文态势界面：节点、服务、声明能力、工作单与执行尝试分别统计；搜索、状态筛选、对象详情和来源覆盖联动。
-- 只读观察后端：Node 地址簿、manifest、health、服务与技能目录；显式配置 origin 的 ACP 工作单和持久事件读取，分页、事件去重、游标隔离与错误诊断。
+- 会话航次：每一次本机会话或 ACP 工作单是一艘小飞船，大小约为设备能力环半径的 1/3，从项目目录泊位出发，在结构化 DreamMate MCP 调用解析出的设备停靠，最后停靠点即终点；到终点后继续围绕目的地盘旋，每个 3 分钟刷新周期重演一次起航。详见 [会话航次](docs/session-voyages-v12.md)。
+- 只读观察后端：Node 地址簿、manifest、health、服务与技能目录；显式配置 origin 的 ACP 工作单和持久事件读取，分页、事件去重、游标隔离与错误诊断；可选的本机 `1session` 会话与轮次读取。
 - 真实与演示切换：默认真实模式；演示模式具有显著标记，独立快照与布局，不写入真实来源，也不充入真实统计。
 - 新鲜度与覆盖：未知、离线、不可用、无权限、不支持、部分覆盖和过期保留区别；来源未接入时不伪造运行数量。
 
@@ -107,10 +125,12 @@ npm run service:uninstall
 
 ACP 只读取配置中明确的 `originSessionId` 范围，支持直连 Gateway 或经已报备的 Node 服务转发；不自动枚举 origin，不建立 ACP 会话控制连接。默认不配置 ACP，因此真实工作单和事件区会显示未接入。`execution_list`、`execution_events` 是读取白名单；不会派单、取消、重试或确认业务结果。
 
+会话航次默认关闭。复制示例配置后设置 `sessions.enabled: true`，观察后端会通过本机 `1session` 只读命令读取 `sessions.scope` 与 `sinceHours` 窗口内的结构化会话，识别其中直接调用的 DreamMate MCP 工具，并把显式 `node` / `service_id` 映射到当前设备与服务。不解析 `exec` / `bash` 脚本内嵌的调用，不返回绝对 workspace 路径；命令不经过 shell。字段与覆盖边界见[会话航次](docs/session-voyages-v12.md)。
+
 API：
 
 - `GET /api/health`：观察服务状态。
-- `GET /api/snapshot?mode=live`：当前真实观察快照。
+- `GET /api/snapshot?mode=live`：当前真实观察快照，包含 `voyages`。
 - `GET /api/snapshot?mode=demo`：显式演示快照。
 - API 不提供执行控制或配置写入接口。
 
@@ -124,7 +144,7 @@ API：
 
 现有上游没有完整的全网调用台账或跨 Node 因果追踪，页面会明确显示缺口；未确认关系不补造接力动画。数据覆盖只限当前配置及可达、可见来源，不展示无完整分母的“全网完成率”。
 
-观察数据仍聚焦原方案 **M1 观察底座 + M2 整体态势大屏**。第二版增强三维模型和驾驶舱；M3 的真实项目/会话、Session Reader 轮次/调用内容与 Artifact Index 产物下钻，以及 M4 宿主只读事件流、完整因果和历史回放，保留为后续增强。演示模式内的项目与宿主占比不代表这些来源已接入。
+观察数据仍聚焦原方案 **M1 观察底座 + M2 整体态势大屏**。第二版增强三维模型和驾驶舱；M3 的本机会话航次（1session 摘要 + 结构化 MCP 调用）已作为增强接入，但会话原始内容下钻、Artifact Index 产物定位，以及 M4 宿主只读事件流、完整因果和历史回放，仍保留为后续增强。演示模式内的项目与宿主占比不代表这些来源已接入。
 
 ## 工程结构
 

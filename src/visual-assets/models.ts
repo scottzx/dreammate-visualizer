@@ -13,7 +13,13 @@ export const UNIVERSE_MODEL_IDS = [
   'academy', 'service-factory',
 ] as const;
 export type UniverseModelId = typeof UNIVERSE_MODEL_IDS[number];
-export const UNIVERSE_MODEL_BASE_URL = '/models/universe-v1';
+/**
+ * Follow the Vite base so one build works both at the server root and under the
+ * GitHub Pages sub-path (`docs/demo/`). In Node (model export script) the Vite
+ * env is absent and the root path is used.
+ */
+const viteEnv = import.meta.env as ImportMetaEnv | undefined;
+export const UNIVERSE_MODEL_BASE_URL = `${(viteEnv?.BASE_URL || '/').replace(/\/+$/, '')}/models/universe-v1`;
 export const UNIVERSE_MODEL_REVISION = 'dyson-lattice-v3.1';
 export const BUILDING_ENVELOPE = { width: 4, depth: 4, height: 2 } as const;
 

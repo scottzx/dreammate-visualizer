@@ -7,5 +7,6 @@
   "maxNodes": 24,
   "maxPages": 5,
   "acpSources": [],
+  "sessions": { "enabled": false, "command": "1session", "scope": "~", "sinceHours": 24, "maxSessions": 12, "maxTurns": 8, "maxCalls": 24, "timeoutMs": 6000 },
   "localProjects": []
 }

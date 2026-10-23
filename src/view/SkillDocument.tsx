@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
 import type { DataMode, SkillDocumentView, SkillView } from '../read-model/types';
+import { demoSkillDocument } from '../read-model/demo-skill';
+import { STANDALONE_DEMO } from './deployment';
 import SkillMarkdown from './SkillMarkdown';
 
 type DocumentState = { status: 'loading' } | { status: 'ready'; document: SkillDocumentView } | { status: 'error'; message: string; directoryChanged: boolean };
@@ -11,6 +13,11 @@ export default function SkillDocument({ mode, serviceId, skill, onRefresh }: {
   const [state, setState] = useState<DocumentState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    if (mode === 'demo' && STANDALONE_DEMO) {
+      // No backend on GitHub Pages: the demo guide is generated locally.
+      setState({ status: 'ready', document: demoSkillDocument(skill) });
+      return;
+    }
     const controller = new AbortController();
     const query = new URLSearchParams({ mode, serviceId, skillId: skill.id });
     if (skill.revision) query.set('revision', skill.revision);

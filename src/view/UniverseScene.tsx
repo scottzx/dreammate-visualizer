@@ -22,6 +22,7 @@ import { placeUniverseLabels, universeNodeSize, universePeerConnections, UNIVERS
 import { advanceOrbitTime, orbitPosition } from './universe-motion';
 import { planetSpin, spinQuaternion } from './spatial-motion';
 import UniverseNavigation, { projectedRadiusPx, UNIVERSE_CAMERA, type UniverseNavigationAction } from './UniverseNavigation';
+import VoyageFleet from './VoyageFleet';
 import SceneFrameLoop from './SceneFrameLoop';
 import { ANIMATION_FPS } from './frame-scheduler';
 import { updateEvidenceLine } from './evidence-line';
@@ -35,6 +36,8 @@ export interface UniverseSceneProps extends FactorySceneProps {
   onEnterNode?: (id: string) => void;
   paused?: boolean;
   navAction?: UniverseNavigationAction;
+  showVoyages?: boolean;
+  visibleVoyageIds?: string[];
 }
 
 const cyan = '#81e7ed';
@@ -421,6 +424,10 @@ export default function UniverseScene(props: UniverseSceneProps) {
   const animate = !paused && !reduced;
   const selected = selectionNodeIds(snapshot, selection);
   const visible = snapshot.nodes.filter((node) => !props.visibleNodeIds || props.visibleNodeIds.includes(node.id));
+  const visibleVoyageIds = props.visibleVoyageIds ? new Set(props.visibleVoyageIds) : undefined;
+  const voyages = props.showVoyages === false ? [] : (snapshot.voyages ?? []).filter(voyage => !visibleVoyageIds || visibleVoyageIds.has(voyage.id));
+  const voyageStopCount = voyages.reduce((count, voyage) => count + voyage.stops.length, 0);
+  const voyageMcpCalls = voyages.reduce((count, voyage) => count + voyage.mcpCalls, 0);
   const contentsByNode = useMemo(() => new Map(snapshot.nodes.map(node => [node.id, planetContents(snapshot, node.id)])), [snapshot]);
   const compositionByNode = useMemo(() => new Map(snapshot.nodes.map(node => [node.id, planetStorageComposition(snapshot, node.id)])), [snapshot]);
   const sizes = new Map(snapshot.nodes.map((node) => [node.id, universeNodeSize(snapshot, node.id)]));
@@ -454,6 +461,9 @@ export default function UniverseScene(props: UniverseSceneProps) {
     data-skill-stars={visible.reduce((count, node) => count + contentsByNode.get(node.id)!.skills.length, 0)}
     data-orbit-hover={orbitHover?.type ?? ''}
     data-peer-connections={showConnections ? peers.length : 0} data-highlighted-peer-connections={showConnections ? peers.filter(({ from, to }) => selected.has(from) || selected.has(to)).length : 0}
+    data-voyage-count={voyages.length} data-voyage-stop-count={voyageStopCount} data-voyage-mcp-calls={voyageMcpCalls}
+    data-voyage-session-count={voyages.filter(voyage => voyage.kind === 'session').length} data-voyage-acp-count={voyages.filter(voyage => voyage.kind === 'acp').length}
+    data-voyage-cycle-ms={snapshot.refreshIntervalMs} data-voyage-selected={selection?.type === 'voyage' ? selection.id : ''}
     data-effects-running={animate ? 'true' : 'false'}
     data-animation-fps={ANIMATION_FPS}
     onPointerDownCapture={(event) => { gestureMoved.current = false; pointerOrigin.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }; }}
@@ -492,6 +502,9 @@ export default function UniverseScene(props: UniverseSceneProps) {
           <PeerConnectionLayer connections={networkPaths.derp} positions={positions} opacity={0.85} color="#efbd70" />
         </>}
         {connections.map((event) => <EvidenceConnection key={event.id} event={event} positions={positions} gestureMoved={gestureMoved} onSelect={onSelect} />)}
+        <VoyageFleet voyages={voyages} positions={positions} sizes={sizes} layoutRadius={layout.radius}
+          localNodeId={snapshot.serviceNodeId ?? relay?.nodeId} selectedId={selection?.type === 'voyage' ? selection.id : undefined}
+          onSelect={onSelect} animate={animate} cycleStart={snapshot.generatedAt} cycleMs={snapshot.refreshIntervalMs} />
         {visible.map((node) => <Planet key={node.id} node={node} plot={layout.plots.get(node.id)!} radius={sizes.get(node.id)!}
           selected={selected.has(node.id)} contents={contentsByNode.get(node.id)!} composition={compositionByNode.get(node.id)!}
           selectedServiceId={selection?.type === 'service' ? selection.id : undefined}

@@ -30,7 +30,7 @@ if (action === 'install') {
 <key>Label</key><string>${label}</string>
 <key>ProgramArguments</key><array><string>${xml(process.execPath)}</string><string>--import</string><string>tsx</string><string>${xml(path.join(root, 'src', 'server', 'index.ts'))}</string></array>
 <key>WorkingDirectory</key><string>${xml(root)}</string>
-<key>EnvironmentVariables</key><dict><key>NODE_ENV</key><string>production</string><key>OBSERVER_CONFIG</key><string>${xml(path.join(root, 'observer.config.json'))}</string></dict>
+<key>EnvironmentVariables</key><dict><key>NODE_ENV</key><string>production</string><key>OBSERVER_CONFIG</key><string>${xml(path.join(root, 'observer.config.json'))}</string><key>PATH</key><string>${xml([path.dirname(process.execPath), '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'].join(':'))}</string></dict>
 <key>RunAtLoad</key><true/>
 <key>KeepAlive</key><true/>
 <key>ThrottleInterval</key><integer>10</integer>

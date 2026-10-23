@@ -14,6 +14,7 @@
 | `maxNodes` | 一次发现上限，默认 24；截断明确标注部分覆盖 |
 | `maxPages` | 每个来源本轮最多读取页数，默认 5；未排空的事件下轮继续 |
 | `acpSources` | 显式授权的 Gateway / Node 服务与 origin 范围；默认为空 |
+| `sessions` | 可选的本机 `1session` 会话来源：`enabled`、`command`、`scope`、`sinceHours`、`maxSessions`、`maxTurns`、`maxCalls`、`timeoutMs`；默认关闭 |
 
 Node 读取最多 6 个并发设备；远端无法连接时给出有界失败。地址簿的网络状态与直接网关探活分开保存，不能根据 tailnet 在线推测服务健康。服务只有存在合法、窗口内的探活时间才显示当前可用；不主动执行方法来验证健康。
 
@@ -49,6 +50,19 @@ Node 读取最多 6 个并发设备；远端无法连接时给出有界失败。
 工作单按公开 `limit/offset` 分页，事件按 `sourceId/originSessionId/jobId` 范围维护 sequence。源身份变化时清除旧游标与事件，从 0 对账；空页不清空旧游标。事件缓存最多保留 300 条用于近期展示。游标与快照是进程内缓存，重启后重建；当前没有持久回放数据库。
 
 ACP 实际设备、会话、轮次关系只采纳显式字段，缺失时显示未确认；不会根据目标名称或文本相似度连线。本次默认运行未配置真实 ACP origin，适配器通过本地契约夹具验证，没有宣称已接入全网工作单。
+
+## 可选会话读取与航次
+
+```json
+{
+  "sessions": { "enabled": true, "command": "1session", "scope": "~", "sinceHours": 24,
+    "maxSessions": 12, "maxTurns": 8, "maxCalls": 24, "timeoutMs": 6000 }
+}
+```
+
+启用后，观察后端以 `execFile` 调用本机 `1session` 的 `projects` / `list` / `turns` / `turn` 只读命令，不经过 shell，也不写会话文件。读取范围是 `scope` 与 `sinceHours`，并按 `maxSessions`、`maxTurns`、`maxCalls` 限制命令次数；单条会话失败只降低覆盖状态，不伪造成零。会话按 60 秒缓存。后台 launchd 的默认 PATH 很窄，`npm run service:install` 会把当前 Node 目录与 `/opt/homebrew/bin` 写入 plist 的 PATH；也可把 `command` 配成绝对路径。
+
+航次只识别工具名本身属于 DreamMate MCP 的结构化调用（如 `dreammate_invoke`、`mcp__dreammate__*`），并用参数中显式的 `node` / `service_id` / `method` 匹配当前设备和服务；`exec` / `bash` 脚本内嵌的调用不解析。没有目标字段的调用落在本地 MCP 网关；目标不在当前目录时保留原始标签并标记未确认。绝对 workspace 路径不进入快照，只发布哈希项目 ID 与目录名。ACP 航次的停靠点只来自执行尝试的明确目标设备，不补造会话内 MCP 调用。详见[会话航次](session-voyages-v12.md)。
 
 ## 进程与 API
 

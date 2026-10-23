@@ -34,7 +34,7 @@
 .scene-legend-colors, .scene-legend-lines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .scene-legend-colors i { width: 9px; height: 9px; flex: none; border-radius: 2px; }
 .legend-line { width: 26px; height: 2px; flex: none; background: #77dce9; }
-.legend-line.relay { background: #efbd70; } .legend-line.peer { height: 1px; background: #518ca480; }
+.legend-line.relay { background: #efbd70; } .legend-line.acp { background: #c9a6f2; } .legend-line.peer { height: 1px; background: #518ca480; }
 .legend-line.event { height: 0; border-top: 1px dashed #81d6e6; background: none; }
 .scene-legend-network { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #2b4b5f; font-size: 11px; color: #91aebe; }
 .scene-legend-network strong { color: #e3bd84; font-weight: 500; }

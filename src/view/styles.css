@@ -5,3 +5,6 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .stage-viewport[data-horizontal-pan=true] canvas{touch-action:pan-x!important}.model-gallery-link{text-decoration:none}
+.metric-cyan:before{background:#6ee6ea}.entity-icon.amber{color:#e8c48c;background:#8a673a33}.entity-icon.blue{color:#9bcbec;background:#427ca325}.entity-icon.violet{color:#d9c3ff;background:#6b4f9a33}
+.voyage-card .voyage-route{display:flex;align-items:center;gap:6px;font-size:10px;color:#8fb3c6;margin-top:2px}.voyage-card .voyage-route span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}.voyage-route svg{flex:none;color:#6f9eb4}
+.voyage-stop{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #244154;font-size:11px;line-height:1.7}.voyage-stop-index{flex:none;font:10px Consolas,monospace;color:#75c9d2;border:1px solid #356271;background:#0d2a3a;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}.voyage-stop strong{display:block;color:#c5dfeb;font-weight:500}.voyage-stop p{color:#93b5c8;font-size:10px;margin-top:2px;overflow-wrap:anywhere}.voyage-stop small{display:block;color:#7395a9;font-size:9px;margin-top:3px}

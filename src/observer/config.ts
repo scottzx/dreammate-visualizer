@@ -9,11 +9,19 @@ export interface AcpSourceConfig {
 }
 export interface LocalProjectConfig { id: string; name: string; path: string; category: ProjectCategory }
 export interface TailscaleConfig { binary: string; centralRelayRegion?: string; centralRelayNodeId?: string }
+export interface SessionSourceConfig {
+  enabled: boolean; command: string; scope: string; sinceHours: number;
+  maxSessions: number; maxTurns: number; maxCalls: number; timeoutMs: number;
+}
+export const DEFAULT_SESSION_SOURCE: SessionSourceConfig = {
+  enabled: false, command: '1session', scope: '~', sinceHours: 24, maxSessions: 12, maxTurns: 8, maxCalls: 24, timeoutMs: 6000,
+};
 export interface ObserverConfig {
   listenHosts: string[];
   nodeUrls: string[]; timeoutMs: number; refreshIntervalMs: number; staleAfterMs: number;
   localNodeId?: string;
   localProjects: LocalProjectConfig[];
+  sessions: SessionSourceConfig;
   tailscale?: TailscaleConfig;
   maxNodes: number; maxPages: number; acpSources: AcpSourceConfig[]; diagnostics: string[];
 }
@@ -57,10 +65,35 @@ export function parseConfig(value: unknown, env: NodeJS.ProcessEnv = process.env
     return [{ id, name: string(project.name, id), path: path.resolve(directory), category }];
   });
   if (localProjects.length && !string(input.localNodeId).trim()) diagnostics.push('本机项目未绑定 localNodeId，不读取目录大小');
+  const sessions = parseSessionSource(input.sessions, diagnostics);
   const network = object(input.tailscale);
   const tailscale = input.tailscale ? { binary: string(network.binary, 'tailscale'), centralRelayRegion: string(network.centralRelayRegion) || undefined,
     centralRelayNodeId: string(network.centralRelayNodeId) || undefined } : undefined;
-  return { localNodeId: string(input.localNodeId).trim() || undefined, localProjects, tailscale, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 180000, 3000, 600000), staleAfterMs: bounded(input.staleAfterMs, 540000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
+  return { localNodeId: string(input.localNodeId).trim() || undefined, localProjects, sessions, tailscale, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 180000, 3000, 600000), staleAfterMs: bounded(input.staleAfterMs, 540000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
+}
+
+/** Session reading is opt-in; every field is bounded and the command is never shell-expanded. */
+function parseSessionSource(value: unknown, diagnostics: string[]): SessionSourceConfig {
+  if (value === undefined) return { ...DEFAULT_SESSION_SOURCE };
+  if (value === true) return { ...DEFAULT_SESSION_SOURCE, enabled: true };
+  const input = object(value);
+  const enabled = input.enabled === true;
+  const command = string(input.command, DEFAULT_SESSION_SOURCE.command).trim();
+  const scope = string(input.scope, DEFAULT_SESSION_SOURCE.scope).trim();
+  const commandValid = command.length > 0 && command.length <= 512 && !command.includes('\0');
+  const scopeValid = scope.length > 0 && scope.length <= 1024 && !scope.includes('\0');
+  if (!commandValid) diagnostics.push('会话来源命令无效，未启用本地会话读取');
+  if (!scopeValid) diagnostics.push('会话来源 scope 无效，已回退到 ~');
+  return {
+    enabled: enabled && commandValid,
+    command: commandValid ? command : DEFAULT_SESSION_SOURCE.command,
+    scope: scopeValid ? scope : DEFAULT_SESSION_SOURCE.scope,
+    sinceHours: bounded(input.sinceHours, DEFAULT_SESSION_SOURCE.sinceHours, 1, 168),
+    maxSessions: bounded(input.maxSessions, DEFAULT_SESSION_SOURCE.maxSessions, 1, 50),
+    maxTurns: bounded(input.maxTurns, DEFAULT_SESSION_SOURCE.maxTurns, 1, 30),
+    maxCalls: bounded(input.maxCalls, DEFAULT_SESSION_SOURCE.maxCalls, 1, 200),
+    timeoutMs: bounded(input.timeoutMs, DEFAULT_SESSION_SOURCE.timeoutMs, 1000, 15_000),
+  };
 }
 
 export async function loadConfig(): Promise<ObserverConfig> {

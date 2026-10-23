@@ -24,7 +24,23 @@ export interface ProjectStorageView {
   path: string; note?: string;
 }
 export interface ProjectView { id: string; name: string; nodeIds: string[]; sessionCount: number | null; providers: { name: string; count: number }[]; status: CoverageStatus; observedAt: string | null; evidence: Evidence[]; storage?: ProjectStorageView[] }
-export interface ObserverSnapshot { version: 1; mode: DataMode; layoutScope?: string; serviceNodeId?: string; privacy?: { ipAddresses: 'hidden' }; generatedAt: string; refreshIntervalMs: number; nodes: NodeView[]; services: ServiceView[]; jobs: JobView[]; events: EventView[]; sources: SourceView[]; limitations: string[]; projects?: ProjectView[]; network?: NetworkTopologyView }
-export type Selection = { type: 'node' | 'service' | 'job' | 'event'; id: string }
+export type VoyageKind = 'session' | 'acp';
+export type VoyageStatus = 'active' | 'ended' | 'unknown';
+export type VoyageStopStatus = 'ok' | 'error' | 'unknown';
+/** One resolved DreamMate MCP docking inside a session; unresolved refs keep the raw label. */
+export interface VoyageStopView {
+  id: string; nodeId?: string; nodeLabel?: string; serviceId?: string; serviceLabel?: string;
+  method?: string; methods?: string[]; toolName?: string; at: string; status: VoyageStopStatus;
+  calls: number; resolved: boolean; evidence: Evidence[];
+}
+/** One observed session or ACP work order treated as a voyage: project dock → MCP stops → last dock. */
+export interface VoyageView {
+  id: string; nativeId: string; kind: VoyageKind; sourceId: string; provider: string; title: string;
+  projectId?: string; projectName: string; originNodeId?: string; startedAt: string; updatedAt: string;
+  status: VoyageStatus; stops: VoyageStopView[]; destinationNodeId?: string; destinationLabel: string;
+  mcpCalls: number; evidence: Evidence[];
+}
+export interface ObserverSnapshot { version: 1; mode: DataMode; layoutScope?: string; serviceNodeId?: string; privacy?: { ipAddresses: 'hidden' }; generatedAt: string; refreshIntervalMs: number; nodes: NodeView[]; services: ServiceView[]; jobs: JobView[]; events: EventView[]; sources: SourceView[]; limitations: string[]; projects?: ProjectView[]; voyages?: VoyageView[]; network?: NetworkTopologyView }
+export type Selection = { type: 'node' | 'service' | 'job' | 'event' | 'voyage'; id: string }
   | { type: 'skill'; id: string; serviceId: string };
 export interface FactorySceneProps { snapshot: ObserverSnapshot; selection: Selection | null; onSelect: (selection: Selection | null) => void; visibleNodeIds?: string[]; showConnections?: boolean; resetKey?: number }

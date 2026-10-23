@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import AssetModel from '../visual-assets/AssetModel';
 import { UNIVERSE_MODEL_IDS, UNIVERSE_MODEL_REVISION, type UniverseModelId } from '../visual-assets/models';
+import { assetUrl } from './deployment';
 import './model-gallery.css';
 
 const labels: Record<UniverseModelId, string> = {
@@ -33,9 +34,9 @@ export default function ModelGallery() {
   const [ready, setReady] = useState(false);
   const grounded = !selected.startsWith('planet') && !selected.startsWith('ship');
   return <div className="mg-page">
-    <header className="mg-header"><div><span>DREAMMATE / REUSABLE 3D ASSETS</span><h1>能力宇宙 · 三维模型图鉴</h1><p>拖动旋转，滚轮缩放。每件样本都是驾驶舱中实际使用的独立 GLB 模型。</p></div><a href="/">返回宇宙驾驶舱 →</a></header>
+    <header className="mg-header"><div><span>DREAMMATE / REUSABLE 3D ASSETS</span><h1>能力宇宙 · 三维模型图鉴</h1><p>拖动旋转，滚轮缩放。每件样本都是驾驶舱中实际使用的独立 GLB 模型。</p></div><a href={assetUrl('')}>返回宇宙驾驶舱 →</a></header>
     <div className="mg-layout"><nav className="mg-assets" aria-label="选择三维模型">{UNIVERSE_MODEL_IDS.map(id => <button type="button" key={id} aria-pressed={selected === id} onClick={() => { setReady(false); setSelected(id); }}>{labels[id]}<small>{id}.glb</small></button>)}</nav>
-      <section className="mg-view"><div className="mg-view-title"><strong>{labels[selected]}</strong><a href={`/models/universe-v1/${selected}.glb?rev=${UNIVERSE_MODEL_REVISION}`} download>下载 GLB</a></div><div className="mg-canvas" data-model-ready={ready} data-model-id={selected}>
+      <section className="mg-view"><div className="mg-view-title"><strong>{labels[selected]}</strong><a href={assetUrl(`models/universe-v1/${selected}.glb?rev=${UNIVERSE_MODEL_REVISION}`)} download>下载 GLB</a></div><div className="mg-canvas" data-model-ready={ready} data-model-id={selected}>
         <ViewerBoundary key={selected}><Canvas orthographic camera={{ position: [7, 5.4, 8], zoom: 100, near: .1, far: 100 }} dpr={[1, 1.5]} gl={{ antialias: true }}>
           <color attach="background" args={['#0b1827']} /><ambientLight intensity={1.25} /><hemisphereLight args={['#b5e6ff', '#273845', 1.8]} />
           <directionalLight position={[-4, 7, 5]} intensity={3} color="#ffe7c7" /><directionalLight position={[5, 3, -4]} intensity={2} color="#88d8ff" />

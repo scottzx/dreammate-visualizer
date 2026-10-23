@@ -110,6 +110,11 @@ export function selectionNodeIds(snapshot: ObserverSnapshot, selection: Selectio
     const event = snapshot.events.find((item) => item.id === selection.id);
     return new Set(event ? [event.nodeId, event.targetNodeId].filter((id): id is string => Boolean(id)) : []);
   }
+  if (selection.type === 'voyage') {
+    const voyage = snapshot.voyages?.find((item) => item.id === selection.id);
+    return new Set([voyage?.originNodeId, voyage?.destinationNodeId, ...(voyage?.stops.map((stop) => stop.nodeId) ?? [])]
+      .filter((id): id is string => Boolean(id)));
+  }
   const job = snapshot.jobs.find((item) => item.id === selection.id);
   return new Set(job?.attempts.map((attempt) => attempt.nodeId).filter((id): id is string => Boolean(id)) ?? []);
 }
