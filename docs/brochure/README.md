@@ -30,13 +30,13 @@ CHS="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1228/chrome-head
 | 三行释义 | 记忆保存 ／ 工具就位 ／ 技能在线 |
 | 主视觉 | 能力宇宙里的设备星球与技能星环，右侧满版裁切 |
 | 收尾 | 一张网，装下你所有的智能体 |
-| 右下角 | 发布页二维码 + 扫码提示 |
+| 右下角 | 落地页二维码 + 扫码提示 |
 
 ## 素材
 
 | 文件 | 来源 |
 | --- | --- |
 | `assets/universe-focus.jpg` | 能力宇宙界面截图（设备星球 + 技能星环） |
-| `assets/qr-release.svg` | `qrencode -t SVG -l M -m 2 "https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0"`，41 × 41 模块，已用 Vision 解码验证 |
+| `assets/qr-release.svg` | `qrencode -t SVG -l M -m 2 "https://scottzx.github.io/dreammate-visualizer/"`，37 × 37 模块，已用 Vision 解码验证 |
 
-二维码指向固定 tag 页，不随新版本变化；换 tag 时重新生成并替换该 SVG 即可。
+二维码指向落地页（GitHub Pages），落地页里再引导到 Releases；改站点地址时重新生成并替换该 SVG 即可。
