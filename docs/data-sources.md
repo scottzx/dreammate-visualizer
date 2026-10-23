@@ -9,8 +9,8 @@
 | `listenHosts` | HTTP 页面与 API 的监听 IP 列表，默认回环；本机配置为回环 + Tailscale IP，支持 1–8 项并去重 |
 | `nodeUrls` | 明确的 HTTP(S) Node 种子列表，不能包含凭据、路径或查询参数 |
 | `timeoutMs` | 单次读取超时，默认 3000，范围 300–10000 ms |
-| `refreshIntervalMs` | 后端采样间隔，默认 10000，范围 3000–120000 ms；示例配置为 15000 |
-| `staleAfterMs` | 缓存与探活证据的新鲜度窗口，默认 45000 ms |
+| `refreshIntervalMs` | 后端采样间隔，默认 180000（3 分钟），范围 3000–600000 ms；示例配置为 180000 |
+| `staleAfterMs` | 缓存与探活证据的新鲜度窗口，默认 540000 ms（9 分钟） |
 | `maxNodes` | 一次发现上限，默认 24；截断明确标注部分覆盖 |
 | `maxPages` | 每个来源本轮最多读取页数，默认 5；未排空的事件下轮继续 |
 | `acpSources` | 显式授权的 Gateway / Node 服务与 origin 范围；默认为空 |

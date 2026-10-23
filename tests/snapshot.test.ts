@@ -5,7 +5,7 @@ import { snapshotFacts } from '../src/read-model/presentation';
 import { createObserver } from '../src/observer/index';
 import { parseConfig } from '../src/observer/config';
 
-test('devices retained after failed discovery lose cached network presence', async t => {
+test('failed discovery rechecks known devices without reusing cached network presence', async t => {
   let disconnected = false;
   t.mock.method(globalThis, 'fetch', async (input: string) => {
     const url = new URL(input);
@@ -22,9 +22,102 @@ test('devices retained after failed discovery lose cached network presence', asy
   const second = await observer.snapshot('live', true);
   const retained = second.nodes.find(node => node.nativeId === 'peer');
   assert.ok(retained, 'the device remains selectable');
-  assert.equal(retained.status, 'stale');
+  assert.equal(retained.status, 'ok', 'the known address is probed again even when discovery fails');
   assert.equal(retained.networkOnline, null);
-  assert.equal(retained.online, null);
+  assert.equal(retained.online, true, 'a fresh health response establishes current gateway availability');
+});
+
+test('empty and smaller successful address books keep rechecking previously discovered devices', async t => {
+  let directory = ['alpha', 'beta'];
+  const reads: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (input: string) => {
+    const url = new URL(input);
+    if (url.pathname === '/nodes') return Response.json({ nodes: directory.map(id => ({ node_id: id, ipv4: `${id}.test`, network_online: true })) });
+    const node_id = url.hostname.split('.')[0];
+    if (url.pathname === '/manifest') reads.push(node_id);
+    return Response.json(url.pathname === '/health' ? { node_id } : { node_id, name: node_id, services: [{ id: 'capability' }] });
+  });
+  const observer = createObserver(parseConfig({ nodeUrls: ['http://seed.test:36908'] }, {}));
+  const first = await observer.snapshot('live', true);
+  const identities = first.nodes.map(node => node.id).sort();
+  assert.equal(identities.length, 3);
+  directory = [];
+  const empty = await observer.snapshot('live', true);
+  assert.deepEqual(empty.nodes.map(node => node.id).sort(), identities);
+  assert.equal(empty.services.length, 3);
+  assert.ok(empty.nodes.filter(node => node.nativeId !== 'seed').every(node => node.networkOnline === null && node.online === true));
+  directory = ['alpha'];
+  const smaller = await observer.snapshot('live', true);
+  assert.deepEqual(smaller.nodes.map(node => node.id).sort(), identities);
+  assert.equal(smaller.nodes.find(node => node.nativeId === 'alpha')?.networkOnline, true);
+  assert.equal(smaller.nodes.find(node => node.nativeId === 'beta')?.networkOnline, null);
+  assert.equal(reads.filter(id => id === 'beta').length, 3, 'missing known devices receive a fresh manifest read on every collection');
+});
+
+test('undiscovered and unreachable devices retain cached capabilities and recover on return', async t => {
+  let listed = true, reachable = true, revision = 'first';
+  t.mock.method(globalThis, 'fetch', async (input: string) => {
+    const url = new URL(input), peer = url.hostname === 'peer.test';
+    if (url.pathname === '/nodes') return Response.json({ nodes: listed ? [{ node_id: 'peer', ipv4: 'peer.test', network_online: true }] : [] });
+    if (peer && !reachable) return new Response('{}', { status: 503 });
+    const node_id = peer ? 'peer' : 'seed';
+    return Response.json(url.pathname === '/health' ? { node_id } : { node_id, name: node_id,
+      metadata: { hardware: { storage_total_bytes: 100_000_000_000 } },
+      services: [{ id: revision, skills: [{ id: 'known-skill', name: 'Known skill' }] }] });
+  });
+  const observer = createObserver(parseConfig({ nodeUrls: ['http://seed.test:36908'] }, {}));
+  const first = await observer.snapshot('live', true);
+  const firstPeer = first.nodes.find(node => node.nativeId === 'peer')!;
+  listed = false; reachable = false;
+  const missing = await observer.snapshot('live', true);
+  const cached = missing.nodes.find(node => node.id === firstPeer.id);
+  assert.ok(cached, 'the device remains visible when both discovery and gateway are temporarily unavailable');
+  assert.ok(cached.status === 'partial' || cached.status === 'stale');
+  assert.equal(cached.online, null);
+  assert.equal(cached.networkOnline, null);
+  assert.equal(cached.observedAt, firstPeer.observedAt);
+  assert.equal(cached.storage?.status, 'cached');
+  const cachedServices = missing.services.filter(service => service.nodeId === cached.id);
+  assert.equal(cachedServices[0].nativeId, 'first');
+  assert.equal(cachedServices[0].skills[0].id, 'known-skill');
+  assert.equal(cachedServices[0].status, 'unknown');
+  assert.equal(cachedServices[0].skillsStatus, 'stale');
+  listed = true; reachable = true; revision = 'restored';
+  const restored = await observer.snapshot('live', true);
+  const peer = restored.nodes.find(node => node.id === firstPeer.id)!;
+  assert.equal(peer.status, 'ok');
+  assert.equal(peer.online, true);
+  assert.equal(peer.networkOnline, true);
+  assert.equal(peer.storage?.status, 'observed');
+  assert.deepEqual(restored.services.filter(service => service.nodeId === peer.id).map(service => service.nativeId), ['restored']);
+});
+
+test('known device probes respect maxNodes and stay inside the configured source scope', async t => {
+  let directory = ['alpha'];
+  const reads: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (input: string) => {
+    const url = new URL(input);
+    if (url.pathname === '/nodes') return Response.json({ nodes: directory.map(id => ({ node_id: id, ipv4: `${id}.test` })) });
+    const node_id = url.hostname.split('.')[0];
+    if (url.pathname === '/manifest') reads.push(node_id);
+    return Response.json(url.pathname === '/health' ? { node_id } : { node_id, name: node_id, services: [] });
+  });
+  const config = parseConfig({ nodeUrls: ['http://seed.test:36908'], maxNodes: 2 }, {});
+  const observer = createObserver(config);
+  assert.equal((await observer.snapshot('live', true)).nodes.length, 2);
+  directory = ['beta']; reads.length = 0;
+  const capped = await observer.snapshot('live', true);
+  assert.deepEqual(capped.nodes.map(node => node.nativeId).sort(), ['beta', 'seed']);
+  assert.equal(reads.length, 2);
+  assert.ok(capped.limitations.some(note => note.includes('扫描上限')));
+  directory = []; reads.length = 0;
+  assert.equal((await observer.snapshot('live', true)).nodes.length, 2);
+  assert.deepEqual(reads.sort(), ['beta', 'seed']);
+  config.nodeUrls = ['http://other.test:36908']; reads.length = 0;
+  const changed = await observer.snapshot();
+  assert.deepEqual(changed.nodes.map(node => node.nativeId), ['other']);
+  assert.deepEqual(reads, ['other']);
+  assert.notEqual(changed.layoutScope, capped.layoutScope);
 });
 
 test('demonstration snapshot is isolated and entity references resolve', () => {

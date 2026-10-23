@@ -67,7 +67,10 @@ test('adapter preserves storage evidence and binds local disk capacity only to t
   const address = server.address(); assert.ok(address && typeof address !== 'string');
   const target = { url: `http://127.0.0.1:${address.port}` };
   try {
-    const config = parseConfig({ nodeUrls: [target.url], timeoutMs: 300 }, {});
+    // Pin the staleness window inside the test instead of inheriting the global default:
+    // the assertion below requires that a failed read 59s after the last successful
+    // observation is reported as 'stale', which only holds for staleAfterMs < 59000.
+    const config = parseConfig({ nodeUrls: [target.url], timeoutMs: 300, staleAfterMs: 45000 }, {});
     const adapter = new NodeAdapter(config);
     const first = await adapter.read(target, at);
     assert.equal(first.node.storage?.totalBytes, 128 * GB);

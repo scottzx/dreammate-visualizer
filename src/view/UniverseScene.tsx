@@ -22,6 +22,9 @@ import { placeUniverseLabels, universeNodeSize, universePeerConnections, UNIVERS
 import { advanceOrbitTime, orbitPosition } from './universe-motion';
 import { planetSpin, spinQuaternion } from './spatial-motion';
 import UniverseNavigation, { projectedRadiusPx, UNIVERSE_CAMERA, type UniverseNavigationAction } from './UniverseNavigation';
+import SceneFrameLoop from './SceneFrameLoop';
+import { ANIMATION_FPS } from './frame-scheduler';
+import { updateEvidenceLine } from './evidence-line';
 import './universe-space.css';
 import './relay-topology.css';
 import './service-galaxies.css';
@@ -341,6 +344,7 @@ function EvidenceConnection({ event, positions, onSelect, gestureMoved }: {
   event: EventView; positions: RefObject<Map<string, Vector3>>; onSelect: FactorySceneProps['onSelect']; gestureMoved: RefObject<boolean>;
 }) {
   const line = useRef<Line2>(null);
+  const previous = useRef({ from: new Vector3(Infinity, 0, 0), to: new Vector3(Infinity, 0, 0) });
   const origin = new Vector3();
   const first = positions.current.get(event.nodeId!) ?? origin;
   const last = positions.current.get(event.targetNodeId!) ?? origin;
@@ -366,13 +370,9 @@ function EvidenceConnection({ event, positions, onSelect, gestureMoved }: {
     const b = positions.current.get(event.targetNodeId!);
     if (!line.current || !a || !b) return;
     line.current.visible = camera.position.distanceTo(a) < 800 && camera.position.distanceTo(b) < 800;
-    const coordinates: number[] = [];
-    for (let index = 0; index <= 16; index++) {
-      const t = index / 16;
-      coordinates.push(a.x * (1 - t) + b.x * t, a.y * (1 - t) + b.y * t + Math.sin(t * Math.PI) * 3, a.z * (1 - t) + b.z * t);
-    }
-    line.current.geometry.setPositions(coordinates);
-    line.current.computeLineDistances();
+    if (previous.current.from.equals(a) && previous.current.to.equals(b)) return;
+    updateEvidenceLine(line.current.geometry, a, b);
+    previous.current.from.copy(a); previous.current.to.copy(b);
   });
   return <Line ref={line} points={points} color="#81d6e6" transparent opacity={0.6} dashed dashSize={0.3} gapSize={0.22} lineWidth={1.2}
     onClick={(pointer) => { pointer.stopPropagation(); if (pointer.delta <= 6 && !gestureMoved.current) onSelect({ type: 'event', id: event.id }); }} />;
@@ -455,6 +455,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
     data-orbit-hover={orbitHover?.type ?? ''}
     data-peer-connections={showConnections ? peers.length : 0} data-highlighted-peer-connections={showConnections ? peers.filter(({ from, to }) => selected.has(from) || selected.has(to)).length : 0}
     data-effects-running={animate ? 'true' : 'false'}
+    data-animation-fps={ANIMATION_FPS}
     onPointerDownCapture={(event) => { gestureMoved.current = false; pointerOrigin.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }; }}
     onPointerMoveCapture={(event) => {
       const start = pointerOrigin.current;
@@ -468,8 +469,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
     onPointerCancelCapture={() => { gestureMoved.current = true; pointerOrigin.current = null; labelPointer.current = null; }}
     style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: UNIVERSE_VISUALS.background }}>
     {webGL && !lostContext ? <SceneBoundary fallback={<UniverseFallback props={props} reason="三维素材加载失败，已切换到设备星图。" />}>
-      {/* Keep projection, GL viewport and DOM labels in sync across viewport restoration. Pausing only stops illustrative movement. */}
-      <Canvas dpr={[1, 1.5]} frameloop="always" camera={{ position: [...UNIVERSE_CAMERA.overviewOffset], fov: UNIVERSE_CAMERA.fov, near: 0.03, far: 30000 }}
+      <Canvas dpr={[1, 1.5]} frameloop="never" camera={{ position: [...UNIVERSE_CAMERA.overviewOffset], fov: UNIVERSE_CAMERA.fov, near: 0.03, far: 30000 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'low-power' }}
         onPointerMissed={() => { if (!gestureMoved.current) onSelect(null); }} style={{ touchAction: 'none' }}>
         <color attach="background" args={[UNIVERSE_VISUALS.background]} />
@@ -479,6 +479,7 @@ export default function UniverseScene(props: UniverseSceneProps) {
         <directionalLight position={[20, -4, -8]} color="#4784ff" intensity={2.2} />
         <pointLight position={[-4, 6, 4]} color="#ffcf99" intensity={75} distance={40} decay={2} />
         <CanvasHealth onFailure={() => setLostContext(true)} />
+        <SceneFrameLoop animate={animate} element={sceneElement} />
         <OrbitClock layout={layout} animate={animate} time={orbitTime} positions={positions} />
         <UniverseNavigation resetKey={resetKey} action={props.navAction} positions={positions} sizes={sizes} ringRadius={layout.radius}
           localSystem={localSystem}

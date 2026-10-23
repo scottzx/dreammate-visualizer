@@ -60,7 +60,7 @@ export function parseConfig(value: unknown, env: NodeJS.ProcessEnv = process.env
   const network = object(input.tailscale);
   const tailscale = input.tailscale ? { binary: string(network.binary, 'tailscale'), centralRelayRegion: string(network.centralRelayRegion) || undefined,
     centralRelayNodeId: string(network.centralRelayNodeId) || undefined } : undefined;
-  return { localNodeId: string(input.localNodeId).trim() || undefined, localProjects, tailscale, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 10000, 3000, 120000), staleAfterMs: bounded(input.staleAfterMs, 45000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
+  return { localNodeId: string(input.localNodeId).trim() || undefined, localProjects, tailscale, listenHosts, nodeUrls: [...new Set(nodeUrls)], timeoutMs: bounded(input.timeoutMs, 3000, 300, 10000), refreshIntervalMs: bounded(input.refreshIntervalMs, 180000, 3000, 600000), staleAfterMs: bounded(input.staleAfterMs, 540000, 5000, 600000), maxNodes: bounded(input.maxNodes, 24, 1, 100), maxPages: bounded(input.maxPages, 5, 1, 20), acpSources, diagnostics };
 }
 
 export async function loadConfig(): Promise<ObserverConfig> {

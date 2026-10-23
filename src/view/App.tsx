@@ -17,6 +17,7 @@ import { formatNodeStorage, nodeStorageBytes } from '../read-model/storage';
 import type { UniverseNavigationAction } from './UniverseScene';
 import { displayNetworkEndpoint } from '../read-model/ip-privacy';
 import { resolveSkillSelection } from './layout';
+import { createSnapshotPolling, snapshotRefreshInterval } from './snapshot-polling';
 import './styles.css';
 import './cockpit-tech.css';
 import './cockpit-header.css';
@@ -59,13 +60,26 @@ function SourceCards({ sources }: { sources: SourceView[] }) {
   return <div className="source-list">{sources.map(source => <article className="source-card" key={source.id}><div className="item-topline"><span className={`entity-icon ${sourceTone(source.status)}`}><Database size={16} /></span><Badge tone={sourceTone(source.status)}>{coverageText[source.status]}</Badge></div><h3>{source.name}</h3><p className="source-scope">{source.scope}</p><Field label="来源 ID" mono>{source.id}</Field>{source.version && <Field label="版本">{source.version}</Field>}{source.url && <Field label="读取地址" mono>{displayNetworkEndpoint(source.url)}</Field>}<Field label="观测时间">{fullDate(source.observedAt)}</Field>{source.kind === 'acp' && <Field label="工作单列表观测">{hasObservation(source.jobsObservedAt) ? fullDate(source.jobsObservedAt) : '未核验'}</Field>}{source.diagnostics.length > 0 && <div className="source-diagnostics">{source.diagnostics.map((line, i) => <p key={i}><TriangleAlert size={12} />{line}</p>)}</div>}</article>)}{!sources.length && <EmptyState title="尚无来源信息" detail="连接观察后端后，将展示明确配置的来源与覆盖范围。" />}</div>;
 }
 
+function useDisplayClock() {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
+  return now;
+}
+function CurrentTime() {
+  const now = useDisplayClock();
+  return <time>{new Date(now).toLocaleTimeString('zh-CN', { hour12: false })}</time>;
+}
+function SnapshotTime({ generatedAt }: { generatedAt?: string }) {
+  const now = useDisplayClock();
+  const age = generatedAt ? Math.max(0, Math.floor((now - Date.parse(generatedAt)) / 1000)) : null;
+  return <>{generatedAt ? `快照 ${time(generatedAt, true)} · ${Number.isFinite(age) ? age : '—'} 秒前` : '等待快照'}</>;
+}
+
 export default function App() {
   const [mode, setMode] = useState<DataMode>('live');
   const [snapshot, setSnapshot] = useState<ObserverSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refresh, setRefresh] = useState(0);
-  const [now, setNow] = useState(new Date());
   const [selection, setSelection] = useState<Selection | null>(null);
   const [panel, setPanel] = useState<Panel>('nodes');
   const [leftOpen, setLeftOpen] = useState(false);
@@ -90,28 +104,42 @@ export default function App() {
   const sceneRef = useRef<HTMLDivElement>(null);
   const requestGeneration = useRef(0);
   const latestMode = useRef<DataMode>('live');
-  const forceRefresh = useRef(false);
-  const refreshNow = () => { forceRefresh.current = true; setRefresh(value => value + 1); };
+  const refreshAction = useRef<(() => void) | null>(null);
+  const refreshNow = () => refreshAction.current?.();
 
   useEffect(() => { if (searchOpen) searchInput.current?.focus(); }, [searchOpen]);
-  useEffect(() => { const clock = window.setInterval(() => setNow(new Date()), 1000); return () => clearInterval(clock); }, []);
-  useEffect(() => { const timer = window.setInterval(() => setRefresh(value => value + 1), 15000); return () => clearInterval(timer); }, [mode]);
   useEffect(() => {
     const abort = new AbortController();
     const generation = ++requestGeneration.current;
-    setLoading(true);
-    const force = forceRefresh.current; forceRefresh.current = false;
-    fetch(`/api/snapshot?mode=${mode}${force ? '&refresh=1' : ''}`, { signal: abort.signal, cache: 'no-store' })
-      .then(async response => { if (!response.ok) throw new Error(`观察后端返回 HTTP ${response.status}`); return response.json(); })
-      .then((data: ObserverSnapshot) => {
-        if (generation !== requestGeneration.current || latestMode.current !== mode || abort.signal.aborted) return;
-        if (data?.version !== 1 || data.mode !== mode || !['nodes', 'services', 'jobs', 'events', 'sources', 'limitations'].every(key => Array.isArray(data[key as keyof ObserverSnapshot]))) throw new Error('快照格式或数据模式不匹配');
-        setSnapshot(data); setError(null);
-      })
-      .catch((reason: unknown) => { if (!abort.signal.aborted && generation === requestGeneration.current && latestMode.current === mode) setError(reason instanceof Error ? reason.message : '无法读取观察快照'); })
-      .finally(() => { if (!abort.signal.aborted && generation === requestGeneration.current && latestMode.current === mode) setLoading(false); });
-    return () => abort.abort();
-  }, [mode, refresh]);
+    const isCurrent = () => !abort.signal.aborted && generation === requestGeneration.current && latestMode.current === mode;
+    const polling = createSnapshotPolling({
+      isVisible: () => document.visibilityState !== 'hidden',
+      request: async force => {
+        if (!isCurrent()) return;
+        setLoading(true);
+        try {
+          const response = await fetch(`/api/snapshot?mode=${mode}${force ? '&refresh=1' : ''}`, { signal: abort.signal, cache: 'no-store' });
+          if (!response.ok) throw new Error(`观察后端返回 HTTP ${response.status}`);
+          const data: ObserverSnapshot = await response.json();
+          if (!isCurrent()) return;
+          if (data?.version !== 1 || data.mode !== mode || !['nodes', 'services', 'jobs', 'events', 'sources', 'limitations'].every(key => Array.isArray(data[key as keyof ObserverSnapshot]))) throw new Error('快照格式或数据模式不匹配');
+          setSnapshot(data); setError(null);
+          return snapshotRefreshInterval(data.refreshIntervalMs);
+        } catch (reason: unknown) {
+          if (isCurrent()) setError(reason instanceof Error ? reason.message : '无法读取观察快照');
+        } finally {
+          if (isCurrent()) setLoading(false);
+        }
+      },
+    });
+    refreshAction.current = polling.refreshNow;
+    document.addEventListener('visibilitychange', polling.visibilityChanged);
+    return () => {
+      polling.stop(); abort.abort();
+      refreshAction.current = null;
+      document.removeEventListener('visibilitychange', polling.visibilityChanged);
+    };
+  }, [mode]);
   useEffect(() => {
     const handler = () => setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', handler);
@@ -195,7 +223,6 @@ export default function App() {
 
   const panelLabels: Record<Panel, string> = { jobs: '业务工作单', nodes: '设备星球', capabilities: '能力目录', sources: '数据来源', events: '观察事件' };
   const panelCounts = { jobs: workKnown ? filteredJobs.length : '—', nodes: nodeKnown ? filteredNodes.length : '—', capabilities: catalogKnown ? filteredServices.length : '—', sources: filteredSources.length, events: filteredEvents.length };
-  const latestSnapshotAge = snapshot ? Math.max(0, Math.floor((now.getTime() - Date.parse(snapshot.generatedAt)) / 1000)) : null;
   const toggleFullscreen = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await sceneRef.current?.requestFullscreen(); setNotice(null); } catch { setNotice('浏览器未允许全屏，可使用窗口最大化继续查看。'); } };
 
   const activeNode = nodes.find(node => node.id === activeNodeId);
@@ -246,7 +273,7 @@ export default function App() {
       <div className="cockpit-header-status">
         <span className="readonly" title="只读观察"><ShieldCheck size={11} /><span>只读观察</span></span>
         <button className={`connection-summary ${problematicSources ? 'has-issues' : ''}`} onClick={() => setSourceDrawer(true)} aria-label={snapshot ? `${healthySources}/${sources.length} 来源正常` : '等待来源'} title={snapshot ? `${healthySources}/${sources.length} 来源正常，查看来源详情` : '等待来源'}><span className="status-dot" /><span>{snapshot ? `${healthySources}/${sources.length}` : '—'}</span><span className="connection-label">来源正常</span><ChevronRight size={11} /></button>
-        <time>{now.toLocaleTimeString('zh-CN', { hour12: false })}</time>
+        <CurrentTime />
       </div>
     </header>
     <main className="cockpit-world" ref={sceneRef}>
@@ -268,7 +295,7 @@ export default function App() {
       <div className="world-bottomline"><div className="world-legend"><button className="world-legend-button" onClick={() => setLegendOpen(true)} aria-label="打开图例说明" aria-haspopup="dialog"><CircleHelp size={15} />图例</button></div><div className="world-directory">{activeNode && <button onClick={() => { setSelection(null); setSelectedLot(null); setInsideBuilding(false); setRightOpen(false); }}><ChevronLeft size={14} />基地</button>}<button onClick={() => openPanel('nodes')}><Server size={14} />{nodeKnown ? nodes.length : '—'} 设备</button><button onClick={() => openPanel('capabilities')}><Boxes size={14} />{catalogKnown ? services.length : '—'} 服务</button><button onClick={() => openPanel('events')}><Activity size={14} />观察事件 <span>{events.length}</span></button></div></div>
       {legendOpen && <SceneLegend snapshot={snapshot} showConnections={showConnections} onClose={() => setLegendOpen(false)} />}
     </main>
-    <footer className="cockpit-footer"><span><i className={`status-dot ${error ? 'red' : ''}`} />{mode === 'demo' ? '独立演示数据' : '明确配置的可见来源'}<button onClick={() => setSourceDrawer(true)}>覆盖说明<ArrowUpRight size={11} /></button></span><span>{snapshot ? `快照 ${time(snapshot.generatedAt, true)} · ${Number.isFinite(latestSnapshotAge) ? latestSnapshotAge : '—'} 秒前` : '等待快照'}<b>16:9 固定沙盘</b></span></footer>
-    {sourceDrawer && <div className="drawer-backdrop" onClick={() => setSourceDrawer(false)}><aside className="coverage-drawer" role="dialog" aria-modal="true" aria-labelledby="coverage-title" onClick={event => event.stopPropagation()}><div className="drawer-header"><div className="eyebrow">SOURCE & COVERAGE</div><button className="icon-button" autoFocus onClick={() => setSourceDrawer(false)} aria-label="关闭来源详情"><X size={20} /></button><h2 id="coverage-title">画面覆盖到哪里</h2><p>{mode === 'demo' ? '当前是完全独立的演示数据集。' : '来源状态描述采集结果；不可见、失败与未支持都不代表零条记录。'}</p></div><div className="drawer-content"><div className="coverage-summary"><div><strong>{sources.length}</strong><span>可见来源</span></div><div><strong>{healthySources}</strong><span>连接正常</span></div><div><strong>{problematicSources}</strong><span>需关注 / 未覆盖</span></div></div><div className="coverage-note"><Clock3 size={15} /><span>快照生成于 {fullDate(snapshot?.generatedAt)}。每 15 秒重新读取；来源以各自的观测时间为准。</span></div><SourceCards sources={sources} /><h3 className="limitations-heading">当前观察边界</h3>{(snapshot?.limitations.length ? snapshot.limitations : ['尚未获得有效快照，来源范围与新鲜度未知。']).map((limitation, index) => <div className="limitation" key={index}><span>{String(index + 1).padStart(2, '0')}</span><p>{limitation}</p></div>)}</div><div className="drawer-footer"><ShieldCheck size={15} /><span>观察端离线不会阻断现网执行。</span></div></aside></div>}
+    <footer className="cockpit-footer"><span><i className={`status-dot ${error ? 'red' : ''}`} />{mode === 'demo' ? '独立演示数据' : '明确配置的可见来源'}<button onClick={() => setSourceDrawer(true)}>覆盖说明<ArrowUpRight size={11} /></button></span><span><SnapshotTime generatedAt={snapshot?.generatedAt} /><b>16:9 固定沙盘</b></span></footer>
+    {sourceDrawer && <div className="drawer-backdrop" onClick={() => setSourceDrawer(false)}><aside className="coverage-drawer" role="dialog" aria-modal="true" aria-labelledby="coverage-title" onClick={event => event.stopPropagation()}><div className="drawer-header"><div className="eyebrow">SOURCE & COVERAGE</div><button className="icon-button" autoFocus onClick={() => setSourceDrawer(false)} aria-label="关闭来源详情"><X size={20} /></button><h2 id="coverage-title">画面覆盖到哪里</h2><p>{mode === 'demo' ? '当前是完全独立的演示数据集。' : '来源状态描述采集结果；不可见、失败与未支持都不代表零条记录。'}</p></div><div className="drawer-content"><div className="coverage-summary"><div><strong>{sources.length}</strong><span>可见来源</span></div><div><strong>{healthySources}</strong><span>连接正常</span></div><div><strong>{problematicSources}</strong><span>需关注 / 未覆盖</span></div></div><div className="coverage-note"><Clock3 size={15} /><span>快照生成于 {fullDate(snapshot?.generatedAt)}。前台每 {snapshotRefreshInterval(snapshot?.refreshIntervalMs) / 60_000} 分钟重新读取，后台暂停自动刷新；来源以各自的观测时间为准。</span></div><SourceCards sources={sources} /><h3 className="limitations-heading">当前观察边界</h3>{(snapshot?.limitations.length ? snapshot.limitations : ['尚未获得有效快照，来源范围与新鲜度未知。']).map((limitation, index) => <div className="limitation" key={index}><span>{String(index + 1).padStart(2, '0')}</span><p>{limitation}</p></div>)}</div><div className="drawer-footer"><ShieldCheck size={15} /><span>观察端离线不会阻断现网执行。</span></div></aside></div>}
   </div>;
 }
