@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "DreamMate 分布式设备与能力网络的三维协作观察应用",
+  "description": "一芥天地（DreamMate World）分布式设备与能力网络的三维协作观察应用",
   "scripts": {
     "dev": "concurrently -k -n observer,view \"tsx watch src/server/index.ts\" \"vite --host 127.0.0.1\"",
     "dev:server": "tsx watch src/server/index.ts",

@@ -90,7 +90,7 @@ async function main() {
   const port = Number(process.env.OBSERVER_PORT ?? 4318);
   if (!Number.isSafeInteger(port) || port < 1 || port > 65535) throw new Error('OBSERVER_PORT 无效');
   const servers = await listenObserverServers(observer, config.listenHosts, port);
-  console.log(`DreamMate 只读观察服务已启动（端口 ${port}，${servers.length} 个监听地址）`);
+  console.log(`一芥天地（DreamMate World）只读观察服务已启动（端口 ${port}，${servers.length} 个监听地址）`);
   void observer.snapshot().catch(error => console.error('[observer] 首次采集失败', error instanceof Error ? redactIpText(error.message) : '采集失败'));
   const timer = setInterval(() => { void observer.snapshot('live', true).catch(error => console.error('[observer] 刷新失败', error instanceof Error ? redactIpText(error.message) : '采集失败')); }, config.refreshIntervalMs); timer.unref();
   const close = () => {

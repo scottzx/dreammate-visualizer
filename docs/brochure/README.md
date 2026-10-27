@@ -1,4 +1,4 @@
-# 一伴 · A4 宣传页
+# 一芥天地（DreamMate World） · A4 宣传页
 
 横版 A4（297 × 210 mm）单页宣传页的源文件。版式全部用毫米写死，由无头 Chrome 直接渲染成 300 dpi 图片或矢量 PDF；改文案只改 `index.html`，不需要设计软件。
 
@@ -23,7 +23,7 @@ CHS="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1228/chrome-head
 
 | 区块 | 内容 |
 | --- | --- |
-| 品牌 | 一伴 · YIBAN |
+| 品牌 | 一芥天地 · DreamMate World |
 | 主标题 | 小蓝同学的 / 天生另一半（第二行取青） |
 | 副标题 | Personal Agent infra ／ 个人智能体基础设施 |
 | 导语 | 一台设备接进网络，就成为一个能力节点。换设备、换模型、换工具链，都不用再配置一次。 |
