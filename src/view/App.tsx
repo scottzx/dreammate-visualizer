@@ -130,7 +130,7 @@ export default function App() {
   const refreshNow = () => refreshAction.current?.();
 
   useEffect(() => { if (searchOpen) searchInput.current?.focus(); }, [searchOpen]);
-  useEffect(() => { if (STANDALONE_DEMO) document.title = '能力宇宙演示 · 一伴'; }, []);
+  useEffect(() => { if (STANDALONE_DEMO) document.title = '能力宇宙演示 · 一芥天地（DreamMate World）'; }, []);
   useEffect(() => {
     if (!displayMode) return;
     const closeDrawers = (event: KeyboardEvent) => { if (event.key === 'Escape') { setLeftOpen(false); setRightOpen(false); } };

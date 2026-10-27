@@ -1,10 +1,10 @@
 <p align="center">
   <a href="https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0">
-    <img src="docs/assets/yiban-a4.png" alt="一伴 · Personal Agent infra — A4 宣传页" width="92%">
+    <img src="docs/assets/yiban-a4.png" alt="一芥天地（DreamMate World） · Personal Agent infra — A4 宣传页" width="92%">
   </a>
 </p>
 
-<h1 align="center">一伴 · Personal Agent infra</h1>
+<h1 align="center">一芥天地 · Personal Agent infra</h1>
 
 <p align="center"><strong>小蓝同学的天生另一半</strong>　·　记忆保存　工具就位　技能在线</p>
 
@@ -22,12 +22,12 @@
 | **工具就位** | 手机、电脑、服务器的能力接上就能调用，不用逐台配置。 |
 | **技能在线** | 每个技能包都是一个星点，上线即被发现、被调用。 |
 
-**这个仓库是什么**：一伴的能力宇宙，用三维方式把一个能力网络里的设备、服务、方法与技能画出来——设备是星球，环上每颗星是一个可见技能，连线是它们之间真实可达的路径。A4 宣传页的源文件在 [`docs/brochure`](docs/brochure)，成品在 [Releases](https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0)。
+**这个仓库是什么**：一芥天地的能力宇宙，用三维方式把一个能力网络里的设备、服务、方法与技能画出来——设备是星球，环上每颗星是一个可见技能，连线是它们之间真实可达的路径。A4 宣传页的源文件在 [`docs/brochure`](docs/brochure)，成品在 [Releases](https://github.com/scottzx/dreammate-visualizer/releases/tag/v0.1.0)。
 
 ---
 
 ## DreamMate Visualizer
-DreamMate 分布式设备与能力网络的独立三维观察应用。设备星体采用通透戴森球、恒星内核和细能力星环；服务能力作为卫星，每个可见 Skill 包作为一个星点，球面颜色表示已测项目存储占比。宇宙驾驶舱包含设备星球、平面基地与建筑观察，只读采集，不承担调度或执行中继。
+一芥天地分布式设备与能力网络的独立三维观察应用。设备星体采用通透戴森球、恒星内核和细能力星环；服务能力作为卫星，每个可见 Skill 包作为一个星点，球面颜色表示已测项目存储占比。宇宙驾驶舱包含设备星球、平面基地与建筑观察，只读采集，不承担调度或执行中继。
 
 ## 运行
 
